@@ -1,4 +1,4 @@
-hostname,domain,wg address,pod subnet,root drive,timezone,root_pubkey,luks_password,infomaniak_api_token
-host1,example.net,10.90.0.1/28,10.244.1.0/24,/dev/sda,Europe/Rome,ssh-ed25519 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX root,XXXX,XXXX
-host1,example.net,10.90.0.2/28,10.244.2.0/24,/dev/sda,Europe/Rome,ssh-ed25519 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX root,XXXX,XXXX
-host1,example.net,10.90.0.3/28,10.244.3.0/24,/dev/sda,Europe/Rome,ssh-ed25519 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX root,XXXX,XXXX
+hostname,domain,wg address,pod subnet,root drive,timezone,root_pubkey,luks_password,infomaniak_api_token,wifi_ssid,wifi_passphrase
+host1,example.net,10.90.0.1/28,10.244.1.0/24,/dev/sda,Europe/Rome,XXX,XXX,XXX,SSID,XXX
+host1,example.net,10.90.0.2/28,10.244.2.0/24,/dev/sda,Europe/Rome,XXX,XXX,XXX,SSID,XXX
+host1,example.net,10.90.0.3/28,10.244.3.0/24,/dev/sda,Europe/Rome,XXX,XXX,XXX,SSID,XXX
