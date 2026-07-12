@@ -1,0 +1,6 @@
+[Timer]
+OnCalendar=Minutely
+Unit=dns-update-infomaniak.service
+
+[Install]
+WantedBy=timers.target

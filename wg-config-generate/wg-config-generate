@@ -1,0 +1,35 @@
+#!/bin/sh
+
+[ -x "/usr/local/env/$HOSTNAME.env.private" ] || exit 1
+
+. "/usr/local/env/env.shared"
+. "/usr/local/env/$HOSTNAME.env.private"
+. "/usr/local/env/$HOSTNAME.env.public"
+
+output_file=/etc/wireguard/wg0.conf
+
+> $output_file
+printf '[Interface]\n'                      >> $output_file
+printf 'PrivateKey = %s\n'    "$WG_PRIVKEY" >> $output_file
+printf 'Address = %s\n'       "$WG_ADDRESS" >> $output_file
+printf 'ListenPort = 51820\n'               >> $output_file
+printf 'Table = off\n'                      >> $output_file
+printf '\n'                                 >> $output_file
+
+for peer in $( find /usr/local/env/ -name '*.public' -type f | sed -E 's#.*/##' | sed -E 's#.env.public$##' | sort ); domain
+
+    if [ "$peer" != "$HOSTNAME" ]; then
+
+        . "/usr/local/env/$peer.env.public"
+        WG_ADDRESS=$( $WG_ADDRESS | sed -E 's#/[0-9]+#/32#' )
+        
+        printf '[Peer]\n'                                          >> $output_file
+        printf 'Endpoint = %s:51820\n' "$NODE_HOSTNAME"            >> $output_file
+        printf 'PublicKey = %s\n'      "$WG_PUBKEY"                >> $output_file
+        printf 'PresharedKey = %s\n'   "$WG_PRESHARED_KEY"         >> $output_file
+        printf 'AllowedIPs = %s,%s\n'  "$WG_ADDRESS" "$POD_SUBNET" >> $output_file
+        printf '\n'                                                >> $output_file
+    fi
+done
+
+systemctl enable --now wg-quick@wg0

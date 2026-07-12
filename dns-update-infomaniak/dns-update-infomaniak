@@ -1,0 +1,52 @@
+#!/bin/sh
+
+NAME="$( cat /etc/hostname | cut -d '.' -f 1 )"
+ZONE="$( cat /etc/hostname | cut -d '.' -f 2- )"
+TOKEN="$( cat /usr/local/etc/infomaniak_api_token )"
+
+device=$( ip -6 route show default | grep -oP '(?<=dev )[a-zA-Z0-9]+' | head -n 1 )
+target_ip=$( ip -6 addr show "$device" | grep -oP '(?<=inet6 )[a-f0-9:]+(?=\/[0-9]+ scope global)' | sort | head -n 1 )
+
+zone_data=$( curl -sS -G \
+ -H "Authorization: Bearer $TOKEN" \
+ -H "Content-Type: application/json" \
+ "https://api.infomaniak.com/2/zones/${ZONE}/records"
+)
+
+if echo "$zone_data" | jq -e '.data[] | select(.source == "'$NAME'" and .type == "AAAA")' > /dev/null; then
+
+  record_data=$( echo "$zone_data" | jq '.data[] | select(.source == "'$NAME'") | select(.type == "AAAA")' )
+  current_ip=$( echo "$record_data" | jq -r '.target' )
+  record_id=$( echo "$record_data" | jq -r '.id' )
+
+  if [ "$current_ip" = "$target_ip" ]; then
+
+    echo "DNS RECORD ${NAME}.${ZONE} found with IP: $current_ip, update not needed"
+  else
+
+    echo "DNS RECORD ${NAME}.${ZONE} found with IP: $current_ip, updating to IP: $target_ip"
+
+    curl -sS -X PUT \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+      "target": "'$target_ip'",
+      "ttl": "60"
+     }' \
+     "https://api.infomaniak.com/2/zones/${ZONE}/records/${record_id}" | jq
+  fi
+else
+
+  echo "DNS RECORD ${NAME}.${ZONE} not found, creating with IP: $target_ip"
+
+  curl -sS -X POST \
+   -H "Authorization: Bearer $TOKEN" \
+   -H "Content-Type: application/json" \
+   -d '{
+    "source": "'$NAME'",
+    "target": "'$target_ip'",
+    "ttl": "60",
+    "type": "AAAA"
+   }' \
+  "https://api.infomaniak.com/2/zones/${ZONE}/records" | jq
+fi

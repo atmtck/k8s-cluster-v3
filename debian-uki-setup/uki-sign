@@ -1,0 +1,13 @@
+#!/bin/sh
+
+version="$1"
+[ -x /usr/bin/sbsign ] || exit 1
+[ -z "${version}" ] && exit 0
+
+uki="/boot/efi/EFI/Linux/linux-${version}.efi"
+
+sb_folder="/etc/secureboot/keys"
+[ -x /usr/bin/sbsign ] || exit 1
+[ -z "${version}" ] && exit 0
+echo "sbsign: signing /boot/efi/EFI/Linux/linux-${version}.efi, using key $sb_folder/db.key"
+  sbsign --key $sb_folder/db.key --cert $sb_folder/db.crt --output "$uki" "$uki"
