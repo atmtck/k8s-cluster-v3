@@ -169,11 +169,41 @@ chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postrm.d/
 
 
 # installazione pacchetti di sistema richiesti
-DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode firmware-iwlwifi efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64 iwd
+DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64
 
 
 # imposta password di root
 echo "root:${ROOT_PASSWORD}" | chroot "$chroot_folder" chpasswd
+
+
+# configurazione networkd
+cp network/*.network "$chroot_folder/etc/systemd/network/"
+chmod 644 "$chroot_folder/etc/systemd/network/*.network"
+chroot "$chroot_folder" systemctl enable systemd-networkd
+
+
+# configurazione iwd
+chroot "$chroot_folder" apt install -y firmware-iwlwifi iwd
+cat <<EOF > "$chroot_folder/var/lib/iwd/${WIFI_SSID}.psk"
+[Security]
+Passphrase=$WIFI_PASSPHRASE
+EOF
+systemcl enable iwd
+
+
+# configurazione resolved
+chroot "$chroot_folder" apt install -y systemd-resolved
+cp network/resolved.conf "$chroot_folder/etc/systemd/"
+chmod 644 "$chroot_folder/etc/systemd/resolved.conf"
+ln -sf "$chroot_folder/run/systemd/resolve/stub-resolv.conf" "$chroot_folder/etc/resolv.conf"
+chroot "$chroot_folder" systemctl enable systemd-resolved
+
+
+# configurazione ntp
+chroot "$chroot_folder" apt install -y chrony
+cp network/chrony.conf "$chroot_folder/etc/chrony/"
+chmod 644 "$chroot_folder/etc/chrony/chrony.conf"
+chroot "$chroot_folder" systemctl enable chronyd
 
 
 # configurazione auto update dns
@@ -187,7 +217,7 @@ chmod 744 "$chroot_folder/usr/local/bin/dns-update-infomaniak"
 cp dns-update-infomaniak/dns-update-infomaniak.* "$chroot_folder/etc/systemd/system/"
 chmod 644 "$chroot_folder/etc/systemd/system/dns-update-infomaniak.*"
 chroot "$chroot_folder" systemctl daemon-reload
-chroot "$chroot_folder" systemctl enable --now dns-update-infomaniak.timer
+chroot "$chroot_folder" systemctl enable dns-update-infomaniak.timer
 
 
 # configurazione wireguard
