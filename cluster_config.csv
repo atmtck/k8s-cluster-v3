@@ -1,0 +1,4 @@
+hostname,domain,wg address,pod subnet,root drive,timezone,root_pubkey,luks_password,infomaniak_api_token
+hbox1,atmtc.eu,10.90.0.1/28,10.244.1.0/24,/dev/sda,Europe/Rome,ssh-ed25519 XXX hbox,XXX,XXX
+hbox2,atmtc.eu,10.90.0.2/28,10.244.2.0/24,/dev/sda,Europe/Rome,ssh-ed25519 XXX hbox,XXX,XXX
+hbox3,atmtc.eu,10.90.0.3/28,10.244.3.0/24,/dev/sda,Europe/Rome,ssh-ed25519 XXX hbox,XXX,XXX
