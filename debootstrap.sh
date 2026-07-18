@@ -173,7 +173,15 @@ DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-micr
 
 
 # imposta password di root
-echo "root:${ROOT_PASSWORD}" | chroot "$chroot_folder" chpasswd
+printf '%s' "root:${ROOT_PASSWORD}" | chroot "$chroot_folder" chpasswd
+
+
+# installa sshd e configura chiavi utente root
+chroot "$chroot_folder" apt install -y ssh
+mkdir -p "$chroot_folder/root/.ssh"
+printf '%s' "$ROOT_PUBKEY" > "$chroot_folder/root/.ssh/authorized_keys"
+chmod 600 -R "$chroot_folder/root/.ssh"
+chroot "$chroot_folder" systemctl enable ssh
 
 
 # configurazione networkd
