@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if ! command -v nft > /dev/null; then
+    printf 'errore: installare comando nft\n' >&2
+    exit 1
+fi
+
+cp /usr/local/lib/nft-input-rules/nft-input-rules.nft /usr/local/bin/
+chmod 544 /usr/local/bin/nft-input-rules.nft
+
+cp /usr/local/lib/nft-input-rules/nft-input-rules.service /etc/systemd/system/
+chmod 444 /etc/systemd/system/nft-input-rules.service
+
+systemctl daemon-reload
+systemctl enable nft-input-rules.service

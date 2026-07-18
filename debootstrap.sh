@@ -219,6 +219,17 @@ chmod 644 "$chroot_folder/etc/chrony/chrony.conf"
 chroot "$chroot_folder" systemctl enable chrony
 
 
+# configurazione regole nftables
+mkdir -p "$chroot_folder/usr/local/lib/nft-input-rules"
+chmod 700 "$chroot_folder/usr/local/lib/nft-input-rules"
+cp nft-rules-setup/nft-input-rules.* "$chroot_folder/usr/local/lib/nft-input-rules"
+
+mkdir -p "$chroot_folder/usr/local/bin"
+cp nft-rules-setup/nft-rules-setup "$chroot_folder/usr/local/bin/"
+chmod 744 "$chroot_folder/usr/local/bin/nft-rules-setup"
+chroot "$chroot_folder" /usr/local/bin/nft-rules-setup
+
+
 # configurazione auto update dns
 chroot "$chroot_folder" apt install -y curl jq
 mkdir -p "$chroot_folder/usr/local/etc" "$chroot_folder/usr/local/bin"
