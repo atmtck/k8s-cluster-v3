@@ -12,4 +12,3 @@ dracut \
   --kernel-cmdline "root=UUID=###target_root_uuid### rd.luks.uuid=###target_luks_uuid### rd.luks.name=###target_luks_uuid###=luks_root rd.luks.options=###target_luks_uuid###=tpm2-device=auto,tpm2-measure-pcr=yes rd.shell=0" \
   --verbose \
   "/boot/efi/EFI/Linux/linux-${version}.efi" --kver "${version}"
-

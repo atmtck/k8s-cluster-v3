@@ -162,6 +162,10 @@ chmod 744 "$chroot_folder/etc/kernel/postinst.d/zb-sign-uki"
 cp debian-uki-setup/uki-boot-update "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
 chmod 744 "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
 
+mkdir -p "$chroot_folder/usr/local/bin"
+cp debian-uki-setup/tpm2-enroll-uki "$chroot_folder/usr/local/bin/"
+chmod 744 "$chroot_folder/etc/kernel/postinst.d/tpm2-enroll-uki"
+
 # configura diversioni con dpkg-divert per impedire la generazione dell'initrd di default
 #chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postinst.d/dracut
 #chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postrm.d/dracut

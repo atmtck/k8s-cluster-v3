@@ -1,0 +1,15 @@
+#!/bin/sh
+
+HOSTNAME=$( cat /etc/hostname )
+[ -f "/usr/local/etc/env/$HOSTNAME.env.private" ] || exit 1
+
+if ! command -v systemd-cryptenroll > /dev/null; then
+    printf 'errore: installare comando systemd-cryptenroll\n' >&2
+    exit 1
+fi
+
+. "/usr/local/etc/env/$HOSTNAME.env.private"
+
+ROOT="${ROOT_DRIVE}2"
+TPM='/dev/tpmrm0' # systemd-cryptenroll --tpm2-device=list
+systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=$TPM --tpm2-pcrs=7+15:sha256=0000000000000000000000000000000000000000000000000000000000000000 $ROOT
