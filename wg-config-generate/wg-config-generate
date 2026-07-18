@@ -3,6 +3,11 @@
 HOSTNAME=$( cat /etc/hostname )
 [ -f "/usr/local/etc/env/$HOSTNAME.env.private" ] || exit 1
 
+if ! command -v wg > /dev/null; then
+    printf 'errore: installare comando wg (wireguard-tools)\n' >&2
+    exit 1
+fi
+
 . "/usr/local/etc/env/env.shared"
 . "/usr/local/etc/env/$HOSTNAME.env.private"
 . "/usr/local/etc/env/$HOSTNAME.env.public"
