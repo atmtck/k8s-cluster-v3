@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# check presenza comandi necessari
+if ! command -v curl >/dev/null || ! command -v jq >/dev/null; then
+    printf 'errore: comando curl o jq mancanti\n' >&2
+    exit 1
+fi
+
 NAME="$( cat /etc/hostname | cut -d '.' -f 1 )"
 ZONE="$( cat /etc/hostname | cut -d '.' -f 2- )"
 TOKEN="$( cat /usr/local/etc/infomaniak_api_token )"

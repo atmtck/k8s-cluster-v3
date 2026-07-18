@@ -10,7 +10,7 @@ fi
 
 
 # verifica presenza comandi richiesti
-for command in $required_commands; do
+for command in parted mmdebstrap openssl cert-to-efi-sig-list sign-efi-sig-list sbkeysync efi-updatevar uuidgen; do
     if ! command -v "$command" > /dev/null; then
         printf 'errore: installare comando %s' "$command" >&2
         printf 'debian: apt install -y parted mmdebstrap openssl sbsigntool efitools uuid-runtime' >&2
@@ -32,7 +32,7 @@ printf 'selezionato: %s\n' "$chosen_host"
 
 
 # source host selezionato
-. "env/env.shared" 
+. "env/env.shared"
 . "env/$chosen_host.env.private"
 . "env/$chosen_host.env.public"
 
@@ -71,7 +71,7 @@ mount "$target_esp" "$chroot_folder/boot/efi"
 
 # copia file environment
 mkdir -p "$chroot_folder/usr/local/etc/env"
-cp "env/$chosen_host.private" env/*.public env/env.shared "$chroot_folder/usr/local/etc/env/"
+cp "env/$chosen_host.env.private" env/*.public env/env.shared "$chroot_folder/usr/local/etc/env/"
 
 
 # chroot prep
@@ -137,8 +137,8 @@ target_luks_uuid=$( blkid | grep "$target_luks"| grep -oP '(?<= UUID=")[A-Za-z0-
 target_root_uuid=$( blkid | grep /dev/mapper/luks_root | grep -oP '(?<= UUID=")[A-Za-z0-9-]+' )
 
 cat << EOF > "$chroot_folder/etc/fstab"
-UUID=$target_root_uuid  /     ext4  defaults,noatime 0 1
-UUID=$target_esp_uuid   /efi  vfat  defaults,noatime 0 2
+UUID=$target_root_uuid  /          ext4  defaults,noatime,discard 0 1
+UUID=$target_esp_uuid   /boot/efi  vfat  defaults,noatime,discard 0 2
 EOF
 
 cat << EOF > "$chroot_folder/etc/crypttab"
@@ -152,8 +152,8 @@ mkdir -p "$chroot_folder/etc/kernel/postinst.d"
 mkdir -p "$chroot_folder/etc/kernel/postrm.d"
 
 cp debian-uki-setup/uki-gen "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
-sed -i "s/###target_luks_uuid###/$target_luks_uuid/" "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
-sed -i "s/###target_root_uuid###/$target_root_uuid/" "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
+sed -i "s/###target_luks_uuid###/$target_luks_uuid/g" "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
+sed -i "s/###target_root_uuid###/$target_root_uuid/g" "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
 chmod 744 "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
 
 cp debian-uki-setup/uki-sign "$chroot_folder/etc/kernel/postinst.d/zb-sign-uki"
@@ -164,12 +164,12 @@ chmod 744 "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
 
 
 # configura diversioni con dpkg-divert per impedire la generazione dell'initrd di default
-chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postinst.d/dracut
-chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postrm.d/dracut
+#chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postinst.d/dracut
+#chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postrm.d/dracut
 
 
 # installazione pacchetti di sistema richiesti
-DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64
+DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64 nano curl jq
 
 
 # imposta password di root
@@ -178,35 +178,38 @@ echo "root:${ROOT_PASSWORD}" | chroot "$chroot_folder" chpasswd
 
 # configurazione networkd
 cp network/*.network "$chroot_folder/etc/systemd/network/"
-chmod 644 "$chroot_folder/etc/systemd/network/*.network"
+chmod 644 "$chroot_folder/etc/systemd/network/"*.network
 chroot "$chroot_folder" systemctl enable systemd-networkd
+chroot "$chroot_folder" systemctl disable systemd-networkd-wait-online
 
 
 # configurazione iwd
 chroot "$chroot_folder" apt install -y firmware-iwlwifi iwd
+mkdir -p "$chroot_folder/var/lib/iwd"
 cat <<EOF > "$chroot_folder/var/lib/iwd/${WIFI_SSID}.psk"
 [Security]
 Passphrase=$WIFI_PASSPHRASE
 EOF
-systemcl enable iwd
+chroot "$chroot_folder" systemctl enable iwd
 
 
 # configurazione resolved
 chroot "$chroot_folder" apt install -y systemd-resolved
 cp network/resolved.conf "$chroot_folder/etc/systemd/"
 chmod 644 "$chroot_folder/etc/systemd/resolved.conf"
-ln -sf "$chroot_folder/run/systemd/resolve/stub-resolv.conf" "$chroot_folder/etc/resolv.conf"
+chroot "$chroot_folder" ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 chroot "$chroot_folder" systemctl enable systemd-resolved
 
 
 # configurazione ntp
-chroot "$chroot_folder" apt install -y chrony
+DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y chrony
 cp network/chrony.conf "$chroot_folder/etc/chrony/"
 chmod 644 "$chroot_folder/etc/chrony/chrony.conf"
-chroot "$chroot_folder" systemctl enable chronyd
+chroot "$chroot_folder" systemctl enable chrony
 
 
 # configurazione auto update dns
+chroot "$chroot_folder" apt install -y curl jq
 mkdir -p "$chroot_folder/usr/local/etc" "$chroot_folder/usr/local/bin"
 printf '%s' "$INFOMANIAK_API_TOKEN" > "$chroot_folder/usr/local/etc/infomaniak_api_token"
 chmod 400 "$chroot_folder/usr/local/etc/infomaniak_api_token"
@@ -215,7 +218,7 @@ cp dns-update-infomaniak/dns-update-infomaniak "$chroot_folder/usr/local/bin/"
 chmod 744 "$chroot_folder/usr/local/bin/dns-update-infomaniak"
 
 cp dns-update-infomaniak/dns-update-infomaniak.* "$chroot_folder/etc/systemd/system/"
-chmod 644 "$chroot_folder/etc/systemd/system/dns-update-infomaniak.*"
+chmod 644 "$chroot_folder/etc/systemd/system/"dns-update-infomaniak.*
 chroot "$chroot_folder" systemctl daemon-reload
 chroot "$chroot_folder" systemctl enable dns-update-infomaniak.timer
 
@@ -225,4 +228,4 @@ chroot "$chroot_folder" apt install -y wireguard-tools
 mkdir -p "$chroot_folder/usr/local/bin"
 cp wg-config-generate/wg-config-generate "$chroot_folder/usr/local/bin/"
 chmod 744 "$chroot_folder/usr/local/bin/wg-config-generate"
-chroot "$chroot_folder" /usr/local/bin/wg-config-generate
+NODE_HOSTNAME="$NODE_HOSTNAME" chroot "$chroot_folder" /usr/local/bin/wg-config-generate
