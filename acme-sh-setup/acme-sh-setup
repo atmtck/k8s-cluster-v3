@@ -1,0 +1,30 @@
+#!/bin/sh
+
+HOSTNAME=$( cat /etc/hostname )
+[ -f "/usr/local/etc/env/$HOSTNAME.env.private" ] || exit 1
+
+if ! command -v acme.sh > /dev/null; then
+    printf 'errore: installare comando acme.sh\n' >&2
+    exit 1
+fi
+
+. "/usr/local/etc/env/env.shared"
+. "/usr/local/etc/env/$HOSTNAME.env.private"
+. "/usr/local/etc/env/$HOSTNAME.env.public"
+
+export INFOMANIAK_API_TOKEN="$INFOMANIAK_API_TOKEN"
+ACME_DOMAIN="$( cat /etc/hostname | cut -d '.' -f 2- )"
+
+mkdir -p /etc/acme.sh
+
+acme.sh --config-home /etc/acme.sh \
+        --server letsencrypt \
+        --issue \
+        --dns dns_infomaniak \
+        -d "$ACME_DOMAIN" -d "*.$ACME_DOMAIN"
+
+acme.sh --config-home /etc/acme-sh \
+        -d "$ACME_DOMAIN" -d "*.$ACME_DOMAIN" \
+        --install-cert \
+        --key-file "/etc/ssl/private/${ACME_DOMAIN}.key" \
+        --fullchain-file "/etc/ssl/private/${ACME_DOMAIN}.pem"

@@ -162,7 +162,6 @@ chmod 744 "$chroot_folder/etc/kernel/postinst.d/zb-sign-uki"
 cp debian-uki-setup/uki-boot-update "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
 chmod 744 "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
 
-
 # configura diversioni con dpkg-divert per impedire la generazione dell'initrd di default
 #chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postinst.d/dracut
 #chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postrm.d/dracut
@@ -231,9 +230,22 @@ chroot "$chroot_folder" systemctl daemon-reload
 chroot "$chroot_folder" systemctl enable dns-update-infomaniak.timer
 
 
+# configurazione acme.sh
+chroot "$chroot_folder" apt install -y acme.sh
+mkdir -p "$chroot_folder/usr/local/bin"
+cp acme-sh-setup/acme-sh-setup "$chroot_folder/usr/local/bin/"
+chmod 744 "$chroot_folder/usr/local/bin/acme-sh-setup"
+cp acme-sh-setup/acme-sh.* "$chroot_folder/etc/systemd/system/"
+chmod 644 "$chroot_folder/etc/systemd/system/acme-sh.*"
+
+chroot "$chroot_folder" /usr/local/bin/acme-sh-setup
+systemctl enable acme-sh.timer
+
+
 # configurazione wireguard
 chroot "$chroot_folder" apt install -y wireguard-tools
 mkdir -p "$chroot_folder/usr/local/bin"
 cp wg-config-generate/wg-config-generate "$chroot_folder/usr/local/bin/"
+
 chmod 744 "$chroot_folder/usr/local/bin/wg-config-generate"
-NODE_HOSTNAME="$NODE_HOSTNAME" chroot "$chroot_folder" /usr/local/bin/wg-config-generate
+chroot "$chroot_folder" /usr/local/bin/wg-config-generate
