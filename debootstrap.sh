@@ -164,7 +164,7 @@ chmod 744 "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
 
 mkdir -p "$chroot_folder/usr/local/bin"
 cp debian-uki-setup/tpm2-enroll-uki "$chroot_folder/usr/local/bin/"
-chmod 744 "$chroot_folder/etc/kernel/postinst.d/tpm2-enroll-uki"
+chmod 744 "$chroot_folder/usr/local/bin/tpm2-enroll-uki"
 
 # configura diversioni con dpkg-divert per impedire la generazione dell'initrd di default
 #chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postinst.d/dracut
@@ -220,6 +220,7 @@ chroot "$chroot_folder" systemctl enable chrony
 
 
 # configurazione regole nftables
+chroot "$chroot_folder" apt install -y nftables
 mkdir -p "$chroot_folder/usr/local/lib/nft-input-rules"
 chmod 700 "$chroot_folder/usr/local/lib/nft-input-rules"
 cp nft-rules-setup/nft-input-rules.* "$chroot_folder/usr/local/lib/nft-input-rules"
@@ -251,10 +252,10 @@ mkdir -p "$chroot_folder/usr/local/bin"
 cp acme-sh-setup/acme-sh-setup "$chroot_folder/usr/local/bin/"
 chmod 744 "$chroot_folder/usr/local/bin/acme-sh-setup"
 cp acme-sh-setup/acme-sh.* "$chroot_folder/etc/systemd/system/"
-chmod 644 "$chroot_folder/etc/systemd/system/acme-sh.*"
+chmod 644 "$chroot_folder/etc/systemd/system/acme-sh."*
 
 chroot "$chroot_folder" /usr/local/bin/acme-sh-setup
-systemctl enable acme-sh.timer
+chroot "$chroot_folder" systemctl enable acme-sh.timer
 
 
 # configurazione wireguard

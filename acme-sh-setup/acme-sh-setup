@@ -23,7 +23,7 @@ acme.sh --config-home /etc/acme.sh \
         --dns dns_infomaniak \
         -d "$ACME_DOMAIN" -d "*.$ACME_DOMAIN"
 
-acme.sh --config-home /etc/acme-sh \
+acme.sh --config-home /etc/acme.sh \
         -d "$ACME_DOMAIN" -d "*.$ACME_DOMAIN" \
         --install-cert \
         --key-file "/etc/ssl/private/${ACME_DOMAIN}.key" \
