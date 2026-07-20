@@ -167,8 +167,8 @@ cp debian-uki-setup/tpm2-enroll-uki "$chroot_folder/usr/local/bin/"
 chmod 744 "$chroot_folder/usr/local/bin/tpm2-enroll-uki"
 
 # configura diversioni con dpkg-divert per impedire la generazione dell'initrd di default
-#chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postinst.d/dracut
-#chroot "$chroot_folder" dpkg-divert --local --rename --add /etc/kernel/postrm.d/dracut
+chroot "$chroot_folder" dpkg-divert --local --rename --divert /etc/kernel/postinst.d/dracut.disabled /etc/kernel/postinst.d/dracut
+chroot "$chroot_folder" dpkg-divert --local --rename --divert /etc/kernel/postrm.d/dracut.disabled /etc/kernel/postrm.d/dracut
 
 
 # installazione pacchetti di sistema richiesti
