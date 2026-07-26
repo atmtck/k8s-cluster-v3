@@ -250,3 +250,11 @@ cp -r setup-acme "$chroot_folder/opt/automation/"
 chmod 600 "$chroot_folder/opt/automation/setup-acme"
 chmod 700 "$chroot_folder/opt/automation/setup-acme/install.sh"
 chroot "$chroot_folder" /opt/automation/setup-acme/install.sh
+
+
+# configurazione zram
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-zram "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-zram"
+chmod 700 "$chroot_folder/opt/automation/setup-zram/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-zram/install.sh
