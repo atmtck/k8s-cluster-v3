@@ -171,7 +171,7 @@ chroot "$chroot_folder" dpkg-divert --local --rename --divert /etc/kernel/postrm
 
 
 # installazione pacchetti di sistema richiesti
-DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64 nano curl jq htop iputils-ping
+DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64 nano htop iputils-ping
 
 
 # imposta password di root
@@ -186,13 +186,6 @@ chmod 600 -R "$chroot_folder/root/.ssh"
 chroot "$chroot_folder" systemctl enable ssh
 
 
-# configurazione networkd
-cp network/*.network "$chroot_folder/etc/systemd/network/"
-chmod 644 "$chroot_folder/etc/systemd/network/"*.network
-chroot "$chroot_folder" systemctl enable systemd-networkd
-chroot "$chroot_folder" systemctl disable systemd-networkd-wait-online
-
-
 # configurazione iwd
 chroot "$chroot_folder" apt install -y firmware-iwlwifi iwd
 mkdir -p "$chroot_folder/var/lib/iwd"
@@ -201,6 +194,14 @@ cat <<EOF > "$chroot_folder/var/lib/iwd/${WIFI_SSID}.psk"
 Passphrase=$WIFI_PASSPHRASE
 EOF
 chroot "$chroot_folder" systemctl enable iwd
+
+
+# configurazione networkd
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-networkd "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-networkd"
+chmod 700 "$chroot_folder/opt/automation/setup-networkd/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-networkd/install.sh
 
 
 # configurazione resolved
