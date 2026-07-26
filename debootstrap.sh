@@ -211,11 +211,12 @@ chroot "$chroot_folder" ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv
 chroot "$chroot_folder" systemctl enable systemd-resolved
 
 
-# configurazione ntp
-DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y chrony
-cp network/chrony.conf "$chroot_folder/etc/chrony/"
-chmod 644 "$chroot_folder/etc/chrony/chrony.conf"
-chroot "$chroot_folder" systemctl enable chrony
+# configurazione chrony
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-chrony "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-chrony"
+chmod 700 "$chroot_folder/opt/automation/setup-chrony/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-chrony/install.sh
 
 
 # configurazione auto update dns
