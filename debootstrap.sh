@@ -172,7 +172,7 @@ chroot "$chroot_folder" dpkg-divert --local --rename --divert /etc/kernel/postrm
 
 
 # installazione pacchetti di sistema richiesti
-DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64 nano curl jq
+DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64 nano curl jq htop iputils-ping
 
 
 # imposta password di root
