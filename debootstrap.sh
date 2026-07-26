@@ -219,18 +219,11 @@ chroot "$chroot_folder" systemctl enable chrony
 
 
 # configurazione auto update dns
-chroot "$chroot_folder" apt install -y curl jq
-mkdir -p "$chroot_folder/usr/local/etc" "$chroot_folder/usr/local/bin"
-printf '%s' "$INFOMANIAK_API_TOKEN" > "$chroot_folder/usr/local/etc/infomaniak_api_token"
-chmod 400 "$chroot_folder/usr/local/etc/infomaniak_api_token"
-
-cp dns-update-infomaniak/dns-update-infomaniak "$chroot_folder/usr/local/bin/"
-chmod 744 "$chroot_folder/usr/local/bin/dns-update-infomaniak"
-
-cp dns-update-infomaniak/dns-update-infomaniak.* "$chroot_folder/etc/systemd/system/"
-chmod 644 "$chroot_folder/etc/systemd/system/"dns-update-infomaniak.*
-chroot "$chroot_folder" systemctl daemon-reload
-chroot "$chroot_folder" systemctl enable dns-update-infomaniak.timer
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-dns-infomaniak "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-dns-infomaniak"
+chmod 700 "$chroot_folder/opt/automation/setup-dns-infomaniak/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-dns-infomaniak/install.sh
 
 
 # configurazione regole nftables
