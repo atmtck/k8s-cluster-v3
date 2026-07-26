@@ -8,7 +8,6 @@ if ! command -v wg > /dev/null; then
     exit 1
 fi
 
-. "/usr/local/etc/env/all.env.public"
 . "/usr/local/etc/env/$HOSTNAME.env.private"
 . "/usr/local/etc/env/$HOSTNAME.env.public"
 
