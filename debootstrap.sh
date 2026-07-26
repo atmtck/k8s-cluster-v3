@@ -32,7 +32,7 @@ printf 'selezionato: %s\n' "$chosen_host"
 
 
 # source host selezionato
-. "env/env.shared"
+. "env/all.env.public"
 . "env/$chosen_host.env.private"
 . "env/$chosen_host.env.public"
 
@@ -71,7 +71,7 @@ mount "$target_esp" "$chroot_folder/boot/efi"
 
 # copia file environment
 mkdir -p "$chroot_folder/usr/local/etc/env"
-cp "env/$chosen_host.env.private" env/*.public env/env.shared "$chroot_folder/usr/local/etc/env/"
+cp "env/$chosen_host.env.private" env/*.public env/all.env.public "$chroot_folder/usr/local/etc/env/"
 
 
 # chroot prep

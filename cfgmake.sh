@@ -11,7 +11,7 @@ if ! command -v kubeadm > /dev/null; then
 fi
 
 # scrittura variabili condivise
-shared_env_file="env/env.shared"
+shared_env_file="env/all.env.public"
 > $shared_env_file
 printf 'KUBEADM_TOKEN="%s"\n'    "$( kubeadm token generate )"        >> $shared_env_file
 printf 'KUBEADM_CERT_KEY="%s"\n' "$( kubeadm certs certificate-key )" >> $shared_env_file
