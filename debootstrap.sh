@@ -218,18 +218,6 @@ chmod 644 "$chroot_folder/etc/chrony/chrony.conf"
 chroot "$chroot_folder" systemctl enable chrony
 
 
-# configurazione regole nftables
-chroot "$chroot_folder" apt install -y nftables
-mkdir -p "$chroot_folder/usr/local/lib/nft-input-rules"
-chmod 700 "$chroot_folder/usr/local/lib/nft-input-rules"
-cp nft-rules-setup/nft-input-rules.* "$chroot_folder/usr/local/lib/nft-input-rules"
-
-mkdir -p "$chroot_folder/usr/local/bin"
-cp nft-rules-setup/nft-rules-setup "$chroot_folder/usr/local/bin/"
-chmod 744 "$chroot_folder/usr/local/bin/nft-rules-setup"
-chroot "$chroot_folder" /usr/local/bin/nft-rules-setup
-
-
 # configurazione auto update dns
 chroot "$chroot_folder" apt install -y curl jq
 mkdir -p "$chroot_folder/usr/local/etc" "$chroot_folder/usr/local/bin"
@@ -255,6 +243,14 @@ chmod 644 "$chroot_folder/etc/systemd/system/acme-sh."*
 
 chroot "$chroot_folder" /usr/local/bin/acme-sh-setup
 chroot "$chroot_folder" systemctl enable acme-sh.timer
+
+
+# configurazione regole nftables
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-nft "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-nft"
+chmod 700 "$chroot_folder/opt/automation/setup-nft/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-nft/install.sh
 
 
 # installazione link wireguard
