@@ -1,0 +1,22 @@
+---
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    linuxDataplane: Nftables
+    bgp: Enabled
+    nodeAddressAutodetectionV4:
+      interface: wg0
+    ipPools:
+      - cidr: "###pod_network_cidr###"
+        blockSize: ###pod_network_mask###
+        encapsulation: "None"
+        nodeSelector: "kubernetes.io/hostname == '###hostname###'"
+---
+apiVersion: operator.tigera.io/v1
+kind: APIServer
+metadata:
+  name: default
+spec: {}
