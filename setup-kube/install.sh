@@ -29,7 +29,7 @@ systemctl enable --now kubelet
 
 # installazione haproxy
 apt install -y haproxy
-cp "${SCRIPT_DIR}/haproxy.cfg" /etc/haproxy/
+cp "$SCRIPT_DIR"/haproxy.cfg /etc/haproxy/
 
 for host_public_config in $( find /usr/local/etc/env/ -name '*.public' -type f | sort ); do
 
@@ -45,7 +45,7 @@ systemctl enable --now haproxy.service
 . "/usr/local/etc/env/$HOSTNAME.env.public"
 mkdir -p /etc/kubernetes
 
-cp "${SCRIPT_DIR}/kubeadm.yaml" /etc/kubernetes/
+cp "$SCRIPT_DIR"/kubeadm.yaml /etc/kubernetes/
 chmod 600 /etc/kubernetes/kubeadm.yaml
 
 sed -i "s/###hostname###/$HOSTNAME/g"                                          /etc/kubernetes/kubeadm.yaml

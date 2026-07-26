@@ -9,7 +9,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 # creazione sezione ipPools per ogni nodo
 mkdir -p /etc/kubernetes
 host_number=$( find /usr/local/etc/env/ -name '*.public' -type f | wc -l )
-awk -v N=$host_number '/- cidr:/,/nodeSelector:/{b=b $0 "\n"; if(/nodeSelector:/){while(N--) printf "%s",b; b=""}; next} 1' "${SCRIPT_DIR}/calico-deployment.yaml" > /etc/kubernetes/calico-deployment.yaml
+awk -v N=$host_number '/- cidr:/,/nodeSelector:/{b=b $0 "\n"; if(/nodeSelector:/){while(N--) printf "%s",b; b=""}; next} 1' "$SCRIPT_DIR"/calico-deployment.yaml > /etc/kubernetes/calico-deployment.yaml
 chmod 600 /etc/kubernetes/calico-deployment.yaml
 
 # riempimento dati sezione ipPools per ogni nodo
