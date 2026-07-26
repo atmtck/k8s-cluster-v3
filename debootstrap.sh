@@ -233,18 +233,6 @@ chroot "$chroot_folder" systemctl daemon-reload
 chroot "$chroot_folder" systemctl enable dns-update-infomaniak.timer
 
 
-# configurazione acme.sh
-chroot "$chroot_folder" apt install -y acme.sh
-mkdir -p "$chroot_folder/usr/local/bin"
-cp acme-sh-setup/acme-sh-setup "$chroot_folder/usr/local/bin/"
-chmod 744 "$chroot_folder/usr/local/bin/acme-sh-setup"
-cp acme-sh-setup/acme-sh.* "$chroot_folder/etc/systemd/system/"
-chmod 644 "$chroot_folder/etc/systemd/system/acme-sh."*
-
-chroot "$chroot_folder" /usr/local/bin/acme-sh-setup
-chroot "$chroot_folder" systemctl enable acme-sh.timer
-
-
 # configurazione regole nftables
 mkdir -p "$chroot_folder/opt/automation/"
 cp -r setup-nft "$chroot_folder/opt/automation/"
@@ -259,3 +247,11 @@ cp -r setup-wg "$chroot_folder/opt/automation/"
 chmod 600 "$chroot_folder/opt/automation/setup-wg"
 chmod 700 "$chroot_folder/opt/automation/setup-wg/install.sh"
 chroot "$chroot_folder" /opt/automation/setup-wg/install.sh
+
+
+# configurazione acme.sh per autodeploy certificato
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-acme "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-acme"
+chmod 700 "$chroot_folder/opt/automation/setup-acme/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-acme/install.sh

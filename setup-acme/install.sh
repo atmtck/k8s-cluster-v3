@@ -3,17 +3,13 @@
 HOSTNAME=$( cat /etc/hostname )
 [ -f "/usr/local/etc/env/$HOSTNAME.env.private" ] || exit 1
 
-if ! command -v acme.sh > /dev/null; then
-    printf 'errore: installare comando acme.sh\n' >&2
-    exit 1
-fi
-
 . "/usr/local/etc/env/$HOSTNAME.env.private"
 . "/usr/local/etc/env/$HOSTNAME.env.public"
 
 export INFOMANIAK_API_TOKEN="$INFOMANIAK_API_TOKEN"
 ACME_DOMAIN="$( cat /etc/hostname | cut -d '.' -f 2- )"
 
+apt install -y acme.sh
 mkdir -p /etc/acme.sh
 
 acme.sh --config-home /etc/acme.sh \
