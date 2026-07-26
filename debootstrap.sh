@@ -257,10 +257,9 @@ chroot "$chroot_folder" /usr/local/bin/acme-sh-setup
 chroot "$chroot_folder" systemctl enable acme-sh.timer
 
 
-# configurazione wireguard
-chroot "$chroot_folder" apt install -y wireguard-tools
-mkdir -p "$chroot_folder/usr/local/bin"
-cp wg-config-generate/wg-config-generate "$chroot_folder/usr/local/bin/"
-
-chmod 744 "$chroot_folder/usr/local/bin/wg-config-generate"
-chroot "$chroot_folder" /usr/local/bin/wg-config-generate
+# installazione link wireguard
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-wg "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-wg"
+chmod 700 "$chroot_folder/opt/automation/setup-wg/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-wg/install.sh

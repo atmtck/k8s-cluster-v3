@@ -3,11 +3,6 @@
 HOSTNAME=$( cat /etc/hostname )
 [ -f "/usr/local/etc/env/$HOSTNAME.env.private" ] || exit 1
 
-if ! command -v wg > /dev/null; then
-    printf 'errore: installare comando wg (wireguard-tools)\n' >&2
-    exit 1
-fi
-
 . "/usr/local/etc/env/$HOSTNAME.env.private"
 . "/usr/local/etc/env/$HOSTNAME.env.public"
 
@@ -21,11 +16,12 @@ printf 'ListenPort = 51820\n'               >> $output_file
 printf 'Table = off\n'                      >> $output_file
 printf '\n'                                 >> $output_file
 
-for peer in $( find /usr/local/etc/env/ -name '*.public' -type f | sed -E 's#.*/##' | sed -E 's#.env.public$##' | sort ); do
+for host_public_config in $( find /usr/local/etc/env/ -name '*.public' -type f | sort ); do
 
-    if [ "$peer" != "$HOSTNAME" ]; then
+    . "$host_public_config"
 
-        . "/usr/local/etc/env/$peer.env.public"
+    if [ "$NODE_HOSTNAME" != "$HOSTNAME" ]; then
+
         WG_ADDRESS=$( printf '%s' "$WG_ADDRESS" | sed -E 's#/[0-9]+#/32#' )
 
         printf '[Peer]\n'                                          >> $output_file
@@ -37,4 +33,5 @@ for peer in $( find /usr/local/etc/env/ -name '*.public' -type f | sed -E 's#.*/
     fi
 done
 
-systemctl enable wg-quick@wg0
+apt install -y wireguard-tools
+systemctl enable --now wg-quick@wg0
