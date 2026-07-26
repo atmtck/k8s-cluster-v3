@@ -204,11 +204,11 @@ chroot "$chroot_folder" systemctl enable iwd
 
 
 # configurazione resolved
-chroot "$chroot_folder" apt install -y systemd-resolved
-cp network/resolved.conf "$chroot_folder/etc/systemd/"
-chmod 644 "$chroot_folder/etc/systemd/resolved.conf"
-chroot "$chroot_folder" ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-chroot "$chroot_folder" systemctl enable systemd-resolved
+mkdir -p "$chroot_folder/opt/automation/"
+cp -r setup-resolved "$chroot_folder/opt/automation/"
+chmod 600 "$chroot_folder/opt/automation/setup-resolved"
+chmod 700 "$chroot_folder/opt/automation/setup-resolved/install.sh"
+chroot "$chroot_folder" /opt/automation/setup-resolved/install.sh
 
 
 # configurazione chrony
