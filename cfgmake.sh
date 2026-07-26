@@ -11,7 +11,6 @@ if ! command -v kubeadm > /dev/null; then
 fi
 
 # generazione variabili comuni
-#
 wg_presharedkey=$( wg genkey )
 kubeadm_token=$( kubeadm token generate )
 kubeadm_cert_key=$( kubeadm certs certificate-key )
