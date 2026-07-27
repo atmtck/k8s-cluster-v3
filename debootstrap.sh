@@ -196,65 +196,23 @@ EOF
 chroot "$chroot_folder" systemctl enable iwd
 
 
-# configurazione networkd
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-networkd "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-networkd"
-chmod 700 "$chroot_folder/opt/automation/setup-networkd/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-networkd/install.sh
+# funzione setup moduli automation
+setup_module() {
+    module="$1"
 
+    mkdir -p "$chroot_folder/opt/automation/"
+    cp -r "$module" "$chroot_folder/opt/automation/"
+    chmod 700 "$chroot_folder/opt/automation/$module"
+    chmod 600 "$chroot_folder/opt/automation/$module/"*
+    chmod 700 "$chroot_folder/opt/automation/$module/install.sh"
+    chroot "$chroot_folder" "/opt/automation/$module/install.sh"
+}
 
-# configurazione resolved
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-resolved "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-resolved"
-chmod 700 "$chroot_folder/opt/automation/setup-resolved/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-resolved/install.sh
-
-
-# configurazione chrony
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-chrony "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-chrony"
-chmod 700 "$chroot_folder/opt/automation/setup-chrony/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-chrony/install.sh
-
-
-# configurazione auto update dns
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-dns-infomaniak "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-dns-infomaniak"
-chmod 700 "$chroot_folder/opt/automation/setup-dns-infomaniak/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-dns-infomaniak/install.sh
-
-
-# configurazione regole nftables
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-nft "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-nft"
-chmod 700 "$chroot_folder/opt/automation/setup-nft/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-nft/install.sh
-
-
-# installazione link wireguard
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-wg "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-wg"
-chmod 700 "$chroot_folder/opt/automation/setup-wg/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-wg/install.sh
-
-
-# configurazione acme.sh per autodeploy certificato
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-acme "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-acme"
-chmod 700 "$chroot_folder/opt/automation/setup-acme/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-acme/install.sh
-
-
-# configurazione zram
-mkdir -p "$chroot_folder/opt/automation/"
-cp -r setup-zram "$chroot_folder/opt/automation/"
-chmod 600 "$chroot_folder/opt/automation/setup-zram"
-chmod 700 "$chroot_folder/opt/automation/setup-zram/install.sh"
-chroot "$chroot_folder" /opt/automation/setup-zram/install.sh
+setup_module setup-networkd
+setup_module setup-resolved
+setup_module setup-chrony
+setup_module setup-dns-infomaniak
+setup_module setup-nft
+setup_module setup-wg
+setup_module setup-acme
+setup_module setup-zram
