@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -xe
+
 if ! command -v wg > /dev/null; then
     printf 'errore: installare comando wg (wireguard-tools)\n' >&2
     exit 1
@@ -20,6 +22,7 @@ printf '%s\n' "$( cat cluster_config.csv | tail -n +2 )" | while IFS=, read -r h
 
     public_env_file="env/$hostname.$domain.env.public"
     private_env_file="env/$hostname.$domain.env.private"
+    mkdir -p env
     > $public_env_file
     > $private_env_file
     printf 'NODE_HOSTNAME="%s"\n'        "$hostname.$domain"                  >> $public_env_file
