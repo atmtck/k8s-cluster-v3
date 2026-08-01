@@ -7,8 +7,9 @@ version="$1"
 echo "dracut: generating /boot/efi/EFI/Linux/linux-${version}.efi"
 dracut \
   --uefi \
+  --hostonly \
   --add "crypt dm systemd-cryptsetup tpm2-tss" \
   --force \
-  --kernel-cmdline "root=UUID=###target_root_uuid### rd.luks.uuid=###target_luks_uuid### rd.luks.name=###target_luks_uuid###=luks_root rd.luks.options=###target_luks_uuid###=tpm2-device=auto,tpm2-measure-pcr=yes rd.shell=0" \
+  --kernel-cmdline "root=UUID=###root_uuid### rd.luks.uuid=###luks_uuid### rd.luks.name=###luks_uuid###=luks_root rd.luks.options=###luks_uuid###=tpm2-device=auto,tpm2-measure-pcr=yes rd.shell=0" \
   --verbose \
   "/boot/efi/EFI/Linux/linux-${version}.efi" --kver "${version}"

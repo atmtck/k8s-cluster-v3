@@ -89,48 +89,12 @@ chroot "$chroot_folder" apt update
 chroot "$chroot_folder" apt modernize-sources -y
 
 
-# imposta hostname, timezone e locale italiano
+# imposta hostname, timezone
 echo "$NODE_HOSTNAME" > "$chroot_folder/etc/hostname"
 ln -sf "$chroot_folder/usr/share/zoneinfo/$TIMEZONE" "$chroot_folder/etc/localtime"
-chroot "$chroot_folder" apt install -y locales
-cat << EOF > "$chroot_folder"/etc/locale.gen
-it_IT.UTF-8 UTF-8
-EOF
-chroot "$chroot_folder" locale-gen
-chroot "$chroot_folder" update-locale LANG=it_IT.UTF-8
 
 
-# generazione e installazione chiavi secure boot
-sb_folder="$chroot_folder/etc/secureboot/keys"
-mkdir -p "$sb_folder"
-
-for cert in PK KEK db; do
-  openssl req -new -x509 -newkey rsa:4096 -days 36500 -sha256 -nodes \
-    -subj "/CN=$NODE_HOSTNAME $cert/" \
-    -keyout "$sb_folder/$cert.key" \
-    -out "$sb_folder/$cert.crt"
-  cert-to-efi-sig-list "$sb_folder/$cert.crt" "$sb_folder/$cert.esl"
-done
-touch "$sb_folder/dbx.esl"
-
-for cert in PK KEK db dbx; do
-  mkdir -p "$sb_folder/$cert"
-done
-
-sign-efi-sig-list -k "$sb_folder/PK.key" -c "$sb_folder/PK.crt" PK "$sb_folder/PK.esl" "$sb_folder/PK/PK.auth"
-sign-efi-sig-list -k "$sb_folder/PK.key" -c "$sb_folder/PK.crt" KEK "$sb_folder/KEK.esl" "$sb_folder/KEK/KEK.auth"
-guid=$(uuidgen)
-sign-efi-sig-list -k "$sb_folder/KEK.key" -c "$sb_folder/KEK.crt" "$guid" "$sb_folder/db.esl" "$sb_folder/db/db.auth"
-sign-efi-sig-list -k "$sb_folder/KEK.key" -c "$sb_folder/KEK.crt" "$guid" "$sb_folder/dbx.esl" "$sb_folder/dbx/dbx.auth"
-
-for cert in PK KEK db dbx; do
-  chattr -f -i "/sys/firmware/efi/efivars/${cert}"*
-done
-sbkeysync --keystore "$sb_folder" --verbose
-efi-updatevar -f "$sb_folder/PK/PK.auth" PK
-
-
-# preparazione fstab e configurazione Dracut
+# preparazione fstab e crypttab
 target_esp_uuid=$( blkid | grep "$target_esp" | grep -oP '(?<= UUID=")[A-Za-z0-9-]+' )
 target_luks_uuid=$( blkid | grep "$target_luks"| grep -oP '(?<= UUID=")[A-Za-z0-9-]+' )
 target_root_uuid=$( blkid | grep /dev/mapper/luks_root | grep -oP '(?<= UUID=")[A-Za-z0-9-]+' )
@@ -145,33 +109,8 @@ luks_root  UUID=$target_root_uuid  none  luks
 EOF
 
 
-# installazione script per configurare utilizzo UKI generato tramite Dracut
-mkdir -p "$chroot_folder/boot/efi/EFI/Linux"
-mkdir -p "$chroot_folder/etc/kernel/postinst.d"
-mkdir -p "$chroot_folder/etc/kernel/postrm.d"
-
-cp debian-uki-setup/uki-gen "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
-sed -i "s/###target_luks_uuid###/$target_luks_uuid/g" "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
-sed -i "s/###target_root_uuid###/$target_root_uuid/g" "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
-chmod 744 "$chroot_folder/etc/kernel/postinst.d/za-uki-gen"
-
-cp debian-uki-setup/uki-sign "$chroot_folder/etc/kernel/postinst.d/zb-sign-uki"
-chmod 744 "$chroot_folder/etc/kernel/postinst.d/zb-sign-uki"
-
-cp debian-uki-setup/uki-boot-update "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
-chmod 744 "$chroot_folder/etc/kernel/postinst.d/zc-uki-boot-update"
-
-mkdir -p "$chroot_folder/usr/local/bin"
-cp debian-uki-setup/tpm2-enroll-uki "$chroot_folder/usr/local/bin/"
-chmod 744 "$chroot_folder/usr/local/bin/tpm2-enroll-uki"
-
-# configura diversioni con dpkg-divert per impedire la generazione dell'initrd di default
-chroot "$chroot_folder" dpkg-divert --local --rename --divert /etc/kernel/postinst.d/dracut.disabled /etc/kernel/postinst.d/dracut
-chroot "$chroot_folder" dpkg-divert --local --rename --divert /etc/kernel/postrm.d/dracut.disabled /etc/kernel/postrm.d/dracut
-
-
 # installazione pacchetti di sistema richiesti
-DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y intel-microcode efibootmgr systemd-cryptsetup tpm2-tools systemd-boot-efi sbsigntool efitools dracut linux-image-amd64 nano htop iputils-ping
+DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y nano htop iputils-ping
 
 
 # imposta password di root
@@ -208,6 +147,8 @@ setup_module() {
     chroot "$chroot_folder" "/opt/automation/$module/install.sh"
 }
 
+setup_module setup-signed-uki
+setup_module setup-efistub-boot
 setup_module setup-networkd
 setup_module setup-resolved
 setup_module setup-chrony
