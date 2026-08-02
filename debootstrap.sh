@@ -10,10 +10,10 @@ fi
 
 
 # verifica presenza comandi richiesti
-for command in parted mmdebstrap openssl cert-to-efi-sig-list sign-efi-sig-list sbkeysync efi-updatevar uuidgen; do
+for command in parted mmdebstrap; do
     if ! command -v "$command" > /dev/null; then
         printf 'errore: installare comando %s' "$command" >&2
-        printf 'debian: apt install -y parted mmdebstrap openssl sbsigntool efitools uuid-runtime' >&2
+        printf 'debian: apt install -y parted mmdebstrap' >&2
         exit 1
     fi
 done
@@ -61,7 +61,7 @@ mkfs.ext4 -F /dev/mapper/luks_root
 chroot_folder=$(mktemp -d)
 mount /dev/mapper/luks_root "$chroot_folder"
 /usr/bin/mmdebstrap --variant=minbase \
-    --components="main non-free-firmware security-updates" \
+    --components="main non-free-firmware" \
     --skip=check/empty \
     trixie "$chroot_folder"
 mkdir -p "$chroot_folder/boot/efi"
@@ -89,9 +89,19 @@ chroot "$chroot_folder" apt update
 chroot "$chroot_folder" apt modernize-sources -y
 
 
-# imposta hostname, timezone
-echo "$NODE_HOSTNAME" > "$chroot_folder/etc/hostname"
-ln -sf "$chroot_folder/usr/share/zoneinfo/$TIMEZONE" "$chroot_folder/etc/localtime"
+# imposta hostname, timezone, locale
+chroot "$chroot_folder" apt install -y systemd locales-all
+chroot "$chroot_folder" printf "keyboard-configuration keyboard-configuration/layout select us" | debconf-set-selections
+chroot "$chroot_folder" printf "keyboard-configuration keyboard-configuration/model select pc105" | debconf-set-selections
+DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y keyboard-configuration
+#sed -Ei 's/.+(it_IT\.UTF-8 UTF-8)$/\1/' "$chroot_folder"/etc/locale.gen
+#chroot "$chroot_folder" locale-gen
+chroot "$chroot_folder" systemd-firstboot --force \
+  --setup-machine-id \
+  --locale=it_IT.UTF-8 \
+  --timezone="$TIMEZONE" \
+  --hostname="$NODE_HOSTNAME" \
+  --root-password="$ROOT_PASSWORD"
 
 
 # preparazione fstab e crypttab
@@ -110,11 +120,7 @@ EOF
 
 
 # installazione pacchetti di sistema richiesti
-DEBIAN_FRONTEND=noninteractive chroot "$chroot_folder" apt install -y nano htop iputils-ping
-
-
-# imposta password di root
-printf '%s' "root:${ROOT_PASSWORD}" | chroot "$chroot_folder" chpasswd
+chroot "$chroot_folder" apt install -y nano htop iputils-ping
 
 
 # installa sshd e configura chiavi utente root
@@ -157,3 +163,5 @@ setup_module setup-nft
 setup_module setup-wg
 setup_module setup-acme
 setup_module setup-zram
+
+umount -lR "$chroot_folder"

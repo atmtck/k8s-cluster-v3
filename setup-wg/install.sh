@@ -7,6 +7,7 @@ HOSTNAME=$( cat /etc/hostname )
 . "/usr/local/etc/env/$HOSTNAME.env.public"
 
 output_file=/etc/wireguard/wg0.conf
+mkdir -p /etc/wireguard/
 
 > $output_file
 printf '[Interface]\n'                      >> $output_file
@@ -33,5 +34,5 @@ for host_public_config in $( find /usr/local/etc/env/ -name '*.public' -type f |
     fi
 done
 
-apt install -y wireguard-tools
-systemctl enable --now wg-quick@wg0
+apt install -y --no-install-recommends --no-install-suggests wireguard-tools
+systemctl enable wg-quick@wg0

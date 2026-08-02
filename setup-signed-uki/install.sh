@@ -7,7 +7,7 @@ HOSTNAME=$( cat /etc/hostname )
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 
 # installazione chiavi secure boot
-apt install -y openssl cert-to-efi-sig-list sign-efi-sig-list sbkeysync efi-updatevar uuidgen sbsigntool
+apt install -y --no-install-recommends --no-install-suggests openssl sbsigntool efitools uuid-runtime
 
 sb_folder=/etc/secureboot/keys
 mkdir -p "$sb_folder"
@@ -56,12 +56,16 @@ chmod 744 /etc/kernel/postinst.d/zb-uki-sign
 # configurazione divert dpkg per evitare generazione initramfs default
 dpkg-divert --local --rename --divert /etc/kernel/postinst.d/dracut.disabled /etc/kernel/postinst.d/dracut
 dpkg-divert --local --rename --divert /etc/kernel/postrm.d/dracut.disabled /etc/kernel/postrm.d/dracut
+mkdir -p /etc/kernel/postinst.d /etc/kernel/postrm.d
+printf '%s\n%s' '#!/bin/sh' 'exit 0' > /etc/kernel/postinst.d/dracut
+printf '%s\n%s' '#!/bin/sh' 'exit 0' > /etc/kernel/postrm.d/dracut
+chmod +x /etc/kernel/postinst.d/dracut
+chmod +x /etc/kernel/postrm.d/dracut
 
 # installazione kernel
 apt install -y intel-microcode systemd-cryptsetup tpm2-tools systemd-boot-efi dracut linux-image-amd64
 
 # installazione script per enrollment tpm chiavi luks legate a stato secure boot
-apt install -y systemd-cryptenroll
 mkdir -p /usr/local/bin
 cp "$SCRIPT_DIR"/tpm2-enroll-sb-keys /usr/local/bin/
 chmod 744 /usr/local/bin/tpm2-enroll-sb-keys

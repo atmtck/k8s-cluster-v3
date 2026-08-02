@@ -12,6 +12,5 @@ chmod 544 /usr/local/bin/nft-input-rules.nft
 cp "$SCRIPT_DIR"/nft-input-rules.service /etc/systemd/system/
 chmod 444 /etc/systemd/system/nft-input-rules.service
 
-apt install -y nftables
-systemctl daemon-reload
-systemctl enable --now nft-input-rules.service
+apt install -y --no-install-recommends --no-install-suggests nftables
+systemctl enable nft-input-rules.service

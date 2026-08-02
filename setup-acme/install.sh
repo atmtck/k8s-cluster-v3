@@ -12,7 +12,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 export INFOMANIAK_API_TOKEN="$INFOMANIAK_API_TOKEN"
 ACME_DOMAIN="$( cat /etc/hostname | cut -d '.' -f 2- )"
 
-apt install -y acme.sh
+apt install -y --no-install-recommends --no-install-suggests acme.sh
 mkdir -p /etc/acme.sh
 
 acme.sh --config-home /etc/acme.sh \
@@ -32,5 +32,4 @@ printf '%s' "$INFOMANIAK_API_TOKEN" > /etc/auth/infomaniak_api_token
 
 cp "$SCRIPT_DIR"/acme-sh.service "$SCRIPT_DIR"/acme-sh.timer /etc/systemd/system/
 chmod 644 /etc/systemd/system/acme-sh.service /etc/systemd/system/acme-sh.timer
-systemctl daemon-reload
-systemctl enable --now acme-sh.timer
+systemctl enable acme-sh.timer
