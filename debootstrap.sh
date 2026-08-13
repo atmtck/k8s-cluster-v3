@@ -163,5 +163,8 @@ setup_module setup-nft
 setup_module setup-wg
 setup_module setup-acme
 setup_module setup-zram
+setup_module setup-containerd
+setup_module setup-simple-cni
+setup_module setup-kube
 
 umount -lR "$chroot_folder"
