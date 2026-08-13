@@ -7,7 +7,7 @@ table inet input-rules {
     ct state { established, related } accept
     iifname "lo" accept
     iifname "wg0" accept
-    iifname "cali*" accept
+    iifname "cni0" accept
     tcp dport 22 accept
     meta nfproto ipv6 udp dport 51820 accept
 
