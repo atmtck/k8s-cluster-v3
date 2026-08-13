@@ -38,5 +38,5 @@
 
 #### Bringup Cluster
 - verificare configurazione cni (*/etc/cni/net.d/10-bridge.conflist*) e kubeadm (/etc/kubernetes/kubeadm.yaml) abbiano valori corretti
-- lanciare **kubeadm init** sul primo nodo: `kubeadm init --upload-certs --config "kubeadm-$( hostnamectl hostname )-config.yaml"`
-- lanciare **kubeadm join** sui restanti nodi: `kubeadm join --config "kubeadm-$( hostnamectl hostname )-config.yaml"`
+- lanciare **kubeadm init** sul primo nodo: `kubeadm init --upload-certs --config /etc/kubernetes/kubeadm.yaml`
+- lanciare **kubeadm join** sui restanti nodi: `kubeadm join --config /etc/kubernetes/kubeadm.yaml`
