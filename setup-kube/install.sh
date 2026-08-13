@@ -55,3 +55,6 @@ sed -i "s/###hostname###/$HOSTNAME/g"                                          /
 sed -i "s/###wg_address###/$( printf '%s' "$WG_ADDRESS" | cut -d '/' -f 1 )/g" /etc/kubernetes/kubeadm.yaml
 sed -i "s/###token###/$KUBEADM_TOKEN/g"                                        /etc/kubernetes/kubeadm.yaml
 sed -i "s/###cert_key###/$KUBEADM_CERT_KEY/g"                                  /etc/kubernetes/kubeadm.yaml
+
+# export variabile kubeconfig per kubectl
+printf 'KUBECONFIG=/etc/kubernetes/admin.conf\n' >> /etc/environment
