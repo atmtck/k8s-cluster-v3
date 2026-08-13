@@ -21,7 +21,14 @@ systemctl enable containerd
 # installazione kubeadm
 apt-get install -y --no-install-recommends --no-install-suggests apt-transport-https ca-certificates curl gpg
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.36/deb/Release.key | gpg --dearmor --yes -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-printf '%s' 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.36/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+cat <<'EOF' > /etc/apt/sources.list.d/kubernetes.sources
+Types: deb
+URIs: https://pkgs.k8s.io/core:/stable:/v1.36/deb/
+Suites: /
+Components: 
+Signed-By: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+EOF
+
 apt-get update
 apt-get install -y --no-install-recommends --no-install-suggests kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
