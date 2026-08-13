@@ -14,7 +14,6 @@ printf '[Interface]\n'                      >> $output_file
 printf 'PrivateKey = %s\n'    "$WG_PRIVKEY" >> $output_file
 printf 'Address = %s\n'       "$WG_ADDRESS" >> $output_file
 printf 'ListenPort = 51820\n'               >> $output_file
-printf 'Table = off\n'                      >> $output_file
 printf '\n'                                 >> $output_file
 
 for host_public_config in $( find /usr/local/etc/env/ -name '*.public' -type f | sort ); do

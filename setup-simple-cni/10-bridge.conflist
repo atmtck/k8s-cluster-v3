@@ -1,0 +1,22 @@
+{
+  "cniVersion": "1.0.0",
+  "name": "simple-cni",
+  "plugins": [
+    {
+      "type": "bridge",
+      "bridge": "cni0",
+      "isDefaultGateway": true,
+      "ipMasq": true,
+      "ipam": {
+        "type": "host-local",
+        "subnet": "###pod_network_cidr###"
+      }
+    },
+    {
+      "type": "portmap",
+      "capabilities": {
+        "portMappings": true
+      }
+    }
+  ]
+}
