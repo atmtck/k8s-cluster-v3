@@ -14,10 +14,6 @@ net.ipv6.conf.all.forwarding=1
 EOF
 sysctl -p /etc/sysctl.d/00-forwarding.conf
 
-# installazione containerd
-apt install -y --no-install-recommends --no-install-suggests containernetworking-plugins containerd
-systemctl enable containerd
-
 # installazione kubeadm
 apt-get install -y --no-install-recommends --no-install-suggests apt-transport-https ca-certificates curl gpg
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.36/deb/Release.key | gpg --dearmor --yes -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
