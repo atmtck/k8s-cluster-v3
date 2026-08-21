@@ -5,8 +5,10 @@
     {
       "type": "bridge",
       "bridge": "cni0",
+      "mtu": 1420,
       "isDefaultGateway": true,
-      "ipMasq": true,
+      "ipMasq": false,
+      "hairpinMode": true,
       "ipam": {
         "type": "host-local",
         "subnet": "###pod_network_cidr###"

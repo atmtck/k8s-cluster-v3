@@ -1,0 +1,8 @@
+#!/usr/sbin/nft -f
+
+table ip nat {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        ip saddr 10.244.0.0/16 ip daddr != 10.0.0.0/8 masquerade
+    }
+}
