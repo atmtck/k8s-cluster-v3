@@ -27,7 +27,7 @@ spec:
               apk add --no-cache git caddy
 
               cat <<'EOF' > Caddyfile
-              atmtc.eu {
+              www.atmtc.eu {
                 handle {
                   root * website
                   file_server
