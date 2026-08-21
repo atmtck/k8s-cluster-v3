@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: website-deployment
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: website
+  template:
+    metadata:
+      labels:
+        app: website
+      annotations:
+        dns.custom/name: "www"
+        dns.custom/zone: "atmtc.eu"
+    spec:
+      hostNetwork: true
+      containers:
+        - name: website
+          image: alpine:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache git caddy
+
+              cat <<'EOF' > Caddyfile
+              atmtc.eu {
+                handle {
+                  root * website
+                  file_server
+                }
+              }
+              EOF
+
+              git clone https://github.com/atmtck/website.git
+
+              caddy run
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          resources:
+            limits:
+              memory: "100Mi"
+              cpu: "1000m"
