@@ -1,37 +1,48 @@
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: minecraft
-  annotations:
-    dns.custom/name: "minecraft-test"
-    dns.custom/zone: "atmtc.eu"
+  name: minecraft-deployment
 spec:
-  hostNetwork: true
-  containers:
-    - name: minecraft
-      image: registry.fedoraproject.org/fedora-minimal:latest
-      command: ["/bin/sh", "-c"]
-      args:
-        - |
-          microdnf install -y --nodocs curl jq java-25-openjdk-headless
-          microdnf clean all
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft
+  template:
+    metadata:
+      labels:
+        app: minecraft
+      annotations:
+        dns.custom/name: "minecraft-test"
+        dns.custom/zone: "atmtc.eu"
+    spec:
+      hostNetwork: true
+      containers:
+        - name: minecraft
+          image: registry.fedoraproject.org/fedora-minimal:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              microdnf install -y --nodocs curl jq java-25-openjdk-headless
+              microdnf clean all
 
-          echo 'eula=true' > eula.txt
-          echo '[{"uuid":"aff6536a-16e7-4297-979c-e590aafc6118","name":"_IC3"}]' > whitelist.json
-          echo 'whitelist=true' > server.properties
+              echo 'eula=true' > eula.txt
+              echo '[{"uuid":"aff6536a-16e7-4297-979c-e590aafc6118","name":"_IC3"}]' > whitelist.json
+              echo 'whitelist=true' > server.properties
 
-          META_URL=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r '.latest.release as $r | .versions[] | select(.id == $r) | .url')
-          curl -o server.jar $(curl -s "$META_URL" | jq -r '.downloads.server.url')
+              META_URL=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r '.latest.release as $r | .versions[] | select(.id == $r) | .url')
+              curl -o server.jar $(curl -s "$META_URL" | jq -r '.downloads.server.url')
 
-          exec java -Xms2G -Xmx2G -jar server.jar nogui
-      ports:
-        - containerPort: 25565
-      resources:
-        requests:
-          memory: "2.5Gi"
-          cpu: "1000m"
-        limits:
-          memory: "3Gi"
-          cpu: "2000m"
-      stdin: true
-      tty: true
+              exec java -Xms2G -Xmx2G -jar server.jar nogui
+          ports:
+            - containerPort: 25565
+          resources:
+            requests:
+              memory: "2.5Gi"
+              cpu: "1000m"
+            limits:
+              memory: "3Gi"
+              cpu: "2000m"
+          stdin: true
+          tty: true

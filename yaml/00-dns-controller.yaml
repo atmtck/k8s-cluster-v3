@@ -14,76 +14,87 @@ roleRef:
   name: view
   apiGroup: rbac.authorization.k8s.io
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: dns-controller
+  name: dns-controller-deployment
 spec:
-  containers:
-    - name: updater
-      image: alpine:latest
-      env:
-        - name: TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: infomaniak-api-token
-              key: token
-      command: ["/bin/sh", "-c"]
-      args:
-        - |
-          apk add --no-cache curl jq kubectl
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dns-controller
+  template:
+    metadata:
+      labels:
+        app: dns-controller
+    spec:
+      containers:
+        - name: dns-controller
+          image: alpine:latest
+          env:
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: infomaniak-api-token
+                  key: token
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache curl jq kubectl
 
-          while true; do
-            kubectl get pods -A --field-selector=status.phase=Running -o json | jq -r '
-              .items[] |
-              select(.metadata.annotations["dns.custom/name"] and .metadata.annotations["dns.custom/zone"]) |
-              "\(.metadata.annotations["dns.custom/name"]) \(.metadata.annotations["dns.custom/zone"]) \(.spec.nodeName)"
-            ' | while read -r NAME ZONE NODE; do
-              [ -z "$NAME" ] && continue
+              while true; do
+                kubectl get pods -A --field-selector=status.phase=Running -o json | jq -r '
+                  .items[] |
+                  select(.metadata.annotations["dns.custom/name"] and .metadata.annotations["dns.custom/zone"]) |
+                  "\(.metadata.annotations["dns.custom/name"]) \(.metadata.annotations["dns.custom/zone"]) \(.spec.nodeName)"
+                ' | while read -r NAME ZONE NODE; do
+                  [ -z "$NAME" ] && continue
 
-              printf 'Detected pod running on node %s annotated for %s.%s\n' "$NODE" "$NAME" "$ZONE"
+                  printf 'Detected pod running on node %s annotated for %s.%s\n' "$NODE" "$NAME" "$ZONE"
 
-              zone_data=$( curl -sS -G \
-              -H "Authorization: Bearer $TOKEN" \
-              -H "Content-Type: application/json" \
-              "https://api.infomaniak.com/2/zones/${ZONE}/records"
-              )
-
-              if printf '%s\n' "$zone_data" | jq --arg name "$NAME" -e '.data[] | select(.source == $name and .type == "CNAME")' > /dev/null; then
-
-                record_data=$( printf '%s\n' "$zone_data" | jq --arg name "$NAME" '.data[] | select(.source == $name and .type == "CNAME")' )
-                current_target=$( printf '%s\n' "$record_data" | jq -r '.target' )
-                record_id=$( printf '%s\n' "$record_data" | jq -r '.id' )
-
-                if [ "$current_target" = "$NODE" ]; then
-                  printf 'DNS RECORD %s.%s found with target: %s, update not needed\n' "$NAME" "$ZONE" "$current_target"
-
-                else
-                  printf 'DNS RECORD %s.%s found with target: %s, updating to target: %s\n' "$NAME" "$ZONE" "$current_target" "$NODE"
-                  curl -sS -X PUT \
+                  zone_data=$( curl -sS -G \
                   -H "Authorization: Bearer $TOKEN" \
                   -H "Content-Type: application/json" \
-                  -d '{
-                      "target": "'$NODE'",
-                      "ttl": "60"
-                  }' \
-                  "https://api.infomaniak.com/2/zones/${ZONE}/records/${record_id}" | jq
-                fi
+                  "https://api.infomaniak.com/2/zones/${ZONE}/records"
+                  )
 
-              else
-                printf 'DNS RECORD %s.%s not found, creating with target: %s\n' "$NAME" "$ZONE" "$NODE"
-                curl -sS -X POST \
-                -H "Authorization: Bearer $TOKEN" \
-                -H "Content-Type: application/json" \
-                -d '{
-                "source": "'$NAME'",
-                "target": "'$NODE'",
-                "ttl": "60",
-                "type": "CNAME"
-                }' \
-                "https://api.infomaniak.com/2/zones/${ZONE}/records" | jq
-              fi
-            done
+                  if printf '%s\n' "$zone_data" | jq --arg name "$NAME" -e '.data[] | select(.source == $name and .type == "CNAME")' > /dev/null; then
 
-            sleep 60
-          done
+                    record_data=$( printf '%s\n' "$zone_data" | jq --arg name "$NAME" '.data[] | select(.source == $name and .type == "CNAME")' )
+                    current_target=$( printf '%s\n' "$record_data" | jq -r '.target' )
+                    record_id=$( printf '%s\n' "$record_data" | jq -r '.id' )
+
+                    if [ "$current_target" = "$NODE" ]; then
+                      printf 'DNS RECORD %s.%s found with target: %s, update not needed\n' "$NAME" "$ZONE" "$current_target"
+
+                    else
+                      printf 'DNS RECORD %s.%s found with target: %s, updating to target: %s\n' "$NAME" "$ZONE" "$current_target" "$NODE"
+                      curl -sS -X PUT \
+                      -H "Authorization: Bearer $TOKEN" \
+                      -H "Content-Type: application/json" \
+                      -d '{
+                          "target": "'$NODE'",
+                          "ttl": "60"
+                      }' \
+                      "https://api.infomaniak.com/2/zones/${ZONE}/records/${record_id}" | jq
+                    fi
+
+                  else
+                    printf 'DNS RECORD %s.%s not found, creating with target: %s\n' "$NAME" "$ZONE" "$NODE"
+                    curl -sS -X POST \
+                    -H "Authorization: Bearer $TOKEN" \
+                    -H "Content-Type: application/json" \
+                    -d '{
+                    "source": "'$NAME'",
+                    "target": "'$NODE'",
+                    "ttl": "60",
+                    "type": "CNAME"
+                    }' \
+                    "https://api.infomaniak.com/2/zones/${ZONE}/records" | jq
+                  fi
+                done
+
+                sleep 60
+              done
