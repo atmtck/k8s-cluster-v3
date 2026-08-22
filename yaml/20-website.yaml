@@ -18,9 +18,34 @@ spec:
         dns.custom/zone: "atmtc.eu"
     spec:
       hostNetwork: true
+      volumes:
+        - name: website-certs-volume
+          hostPath:
+            path: /etc/ssl/private
+            type: Directory
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
       containers:
         - name: website
           image: alpine:latest
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          volumeMounts:
+            - name: website-certs-volume
+              mountPath: /etc/ssl/private
+              readOnly: true
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "1000m"
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -28,6 +53,7 @@ spec:
 
               cat <<'EOF' > Caddyfile
               www.atmtc.eu {
+                tls /etc/ssl/custom/atmtc.eu.pem /etc/ssl/custom/atmtc.eu.key
                 handle {
                   root * website
                   file_server
@@ -36,12 +62,10 @@ spec:
               EOF
 
               git clone https://github.com/atmtck/website.git
+              (while true; do
+                sleep 3600
+                git -C website pull
+              done) &
 
+              caddy fmt --overwrite Caddyfile
               caddy run
-          ports:
-            - containerPort: 80
-            - containerPort: 443
-          resources:
-            limits:
-              memory: "100Mi"
-              cpu: "1000m"
