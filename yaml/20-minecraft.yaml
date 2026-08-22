@@ -1,3 +1,16 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minecraft-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-default
+  resources:
+    requests:
+      storage: 15Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,9 +31,34 @@ spec:
         dns.custom/zone: "atmtc.eu"
     spec:
       hostNetwork: true
+      volumes:
+        - name: minecraft-data-volume
+          persistentVolumeClaim:
+            claimName: minecraft-data-pvc
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
       containers:
         - name: minecraft
           image: registry.fedoraproject.org/fedora-minimal:latest
+          ports:
+            - containerPort: 25565
+          volumeMounts:
+            - name: minecraft-data-volume
+              mountPath: /data
+          workingDir: /data
+          resources:
+            limits:
+              memory: "3Gi"
+              cpu: "2000m"
+          stdin: true
+          tty: true
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -35,14 +73,3 @@ spec:
               curl -o server.jar $(curl -s "$META_URL" | jq -r '.downloads.server.url')
 
               exec java -Xms2G -Xmx2G -jar server.jar nogui
-          ports:
-            - containerPort: 25565
-          resources:
-            requests:
-              memory: "2.5Gi"
-              cpu: "1000m"
-            limits:
-              memory: "3Gi"
-              cpu: "2000m"
-          stdin: true
-          tty: true
