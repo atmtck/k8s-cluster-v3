@@ -10,4 +10,5 @@ cp "$SCRIPT_DIR"/nft-input-rules.service /etc/systemd/system/
 chmod 444 /etc/systemd/system/nft-input-rules.service
 
 nft delete table inet input-rules
+systemctl daemon-reload
 systemctl restart nft-input-rules.service
