@@ -53,7 +53,7 @@ spec:
 
               cat <<'EOF' > Caddyfile
               www.atmtc.eu {
-                tls /etc/ssl/custom/atmtc.eu.pem /etc/ssl/custom/atmtc.eu.key
+                tls /etc/ssl/private/atmtc.eu.pem /etc/ssl/private/atmtc.eu.key
                 handle {
                   root * website
                   file_server
