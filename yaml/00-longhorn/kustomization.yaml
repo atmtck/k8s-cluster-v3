@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - https://raw.githubusercontent.com/longhorn/longhorn/v1.12.1/deploy/longhorn.yaml
   - storageclass.yaml
+  - backuptarget.yaml
 
 patches:
   - target:
