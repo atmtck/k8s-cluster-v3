@@ -19,3 +19,16 @@ patches:
       data:
         default-setting.yaml: |
           node-down-pod-deletion-policy: delete-both-statefulset-and-deployment-pod
+
+  - target:
+      kind: Deployment
+      name: longhorn-ui
+      namespace: longhorn-system
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: longhorn-ui
+        namespace: longhorn-system
+      spec:
+        replicas: 0
