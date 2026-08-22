@@ -1,0 +1,131 @@
+# dopo aver fatto deploy, configurazione iniziale via https://wiki.atmtc.eu:9000/install.php
+# a configurazione completata, eliminare install.php con comando:
+# kubectl exec deployment/dokuwiki-deployment -c dokuwiki -- rm -f /dokuwiki/install.php
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dokuwiki-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-default
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dokuwiki-deployment
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dokuwiki
+  template:
+    metadata:
+      labels:
+        app: dokuwiki
+      annotations:
+        dns.custom/name: "wiki"
+        dns.custom/zone: "atmtc.eu"
+    spec:
+      hostNetwork: true
+      volumes:
+        - name: dokuwiki-data-volume
+          persistentVolumeClaim:
+            claimName: dokuwiki-data-pvc
+        - name: dokuwiki-certs-volume
+          hostPath:
+            path: /etc/ssl/private
+            type: Directory
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+      containers:
+        - name: dokuwiki
+          image: alpine:latest
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: dokuwiki-data-volume
+              mountPath: /data
+          workingDir: /data
+          resources:
+            limits:
+              memory: "500Mi"
+              cpu: "1000m"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache curl tar \
+                php \
+                php-session \
+                php-xml \
+                php-dom \
+                php-gd \
+                php-openssl \
+                php-json \
+                php-zlib \
+                php-mbstring \
+                php-curl \
+                php-ctype \
+                php-fileinfo \
+                php-iconv \
+                php-intl
+
+              if [ ! -f /data/doku.php ]; then
+                curl -fsSL https://download.dokuwiki.org/src/dokuwiki/dokuwiki-stable.tgz | tar -xz -C /data --strip-components=1
+              fi
+
+              exec php -S 127.0.0.1:8000
+
+        - name: caddy
+          image: alpine:latest
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - name: dokuwiki-certs-volume
+              mountPath: /etc/ssl/private
+              readOnly: true
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "1000m"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache caddy
+
+              cat <<'EOF' > Caddyfile
+              {
+                auto_https disable_redirects
+                servers {
+                  listener_wrappers {
+                    http_redirect
+                    tls
+                  }
+                }
+              }
+
+              wiki.atmtc.eu:9000 {
+                tls /etc/ssl/private/atmtc.eu.pem /etc/ssl/private/atmtc.eu.key
+
+                @blocked path /data/* /conf/* /bin/* /inc/* /vendor/*
+                respond @blocked 403
+
+                reverse_proxy 127.0.0.1:8000
+              }
+              EOF
+
+              caddy fmt --overwrite Caddyfile
+              caddy run
