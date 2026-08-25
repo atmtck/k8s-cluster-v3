@@ -6,7 +6,7 @@ table inet input-rules {
 
     ct state { established, related } accept
     iifname { "lo", "wg0", "cni0" } accept
-    tcp dport { 22, 80, 443, 9000, 25565 } accept
+    tcp dport { 22, 80, 443, 9000, 9500, 25565 } accept
     meta nfproto ipv6 udp dport 51820 accept
 
     icmp type { echo-request, destination-unreachable, time-exceeded, parameter-problem } accept

@@ -1,0 +1,114 @@
+# richiede di aver pre-registrato la password admin sul cluster con il comando:
+# kubectl create secret generic leafwiki-admin-password --from-literal=admin-password="<PASSWORD>"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: leafwiki-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-default
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leafwiki-deployment
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: leafwiki
+  template:
+    metadata:
+      labels:
+        app: leafwiki
+      annotations:
+        dns.custom/name: "leafwiki"
+        dns.custom/zone: "atmtc.eu"
+    spec:
+      hostNetwork: true
+      volumes:
+        - name: leafwiki-data-volume
+          persistentVolumeClaim:
+            claimName: leafwiki-data-pvc
+        - name: leafwiki-certs-volume
+          hostPath:
+            path: /etc/ssl/private
+            type: Directory
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+      containers:
+        - name: leafwiki
+          image: ghcr.io/perber/leafwiki:latest
+          ports:
+            - containerPort: 8500
+          volumeMounts:
+            - name: leafwiki-data-volume
+              mountPath: /app/data
+          resources:
+            limits:
+              memory: "300Mi"
+              cpu: "1000m"
+          env:
+            - name: LEAFWIKI_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: leafwiki-admin-password
+                  key: admin-password
+          args:
+            - "--port=8500"
+            - "--admin-password=$(LEAFWIKI_ADMIN_PASSWORD)"
+            - "--allow-insecure=true"
+            - "--enable-revision"
+            - "--enable-link-refactor"
+
+        - name: caddy
+          image: alpine:latest
+          ports:
+            - containerPort: 9500
+          volumeMounts:
+            - name: leafwiki-certs-volume
+              mountPath: /etc/ssl/private
+              readOnly: true
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "1000m"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache caddy
+
+              cat <<'EOF' > Caddyfile
+              {
+                auto_https disable_redirects
+                servers {
+                  listener_wrappers {
+                    http_redirect
+                    tls
+                  }
+                }
+              }
+
+              leafwiki.atmtc.eu:9500 {
+                tls /etc/ssl/private/atmtc.eu.pem /etc/ssl/private/atmtc.eu.key
+
+                reverse_proxy 127.0.0.1:8500
+              }
+              EOF
+
+              caddy fmt --overwrite Caddyfile
+              caddy run
