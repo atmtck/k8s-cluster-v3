@@ -1,5 +1,5 @@
-# richiede di aver pre-registrato la password admin sul cluster con il comando:
-# kubectl create secret generic leafwiki-admin-password --from-literal=admin-password="<PASSWORD>"
+# richiede di aver pre-registrato la password admin e un token jwt sul cluster con il comando:
+# kubectl create secret generic leafwiki-secret --from-literal=admin-password="<PASSWORD>" --from-literal=jwt-secret="$(openssl rand -hex 32)"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -69,10 +69,16 @@ spec:
             - name: LEAFWIKI_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: leafwiki-admin-password
+                  name: leafwiki-secret
                   key: admin-password
+            - name: LEAFWIKI_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: leafwiki-secret
+                  key: jwt-secret
           args:
             - "--port=8500"
+            - "--jwt-secret=$(LEAFWIKI_JWT_SECRET)"
             - "--admin-password=$(LEAFWIKI_ADMIN_PASSWORD)"
             - "--allow-insecure=true"
             - "--enable-revision"
