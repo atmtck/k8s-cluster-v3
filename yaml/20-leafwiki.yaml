@@ -59,9 +59,12 @@ spec:
             - name: leafwiki-data-volume
               mountPath: /app/data
           resources:
+            requests:
+              cpu: "50m"
+              memory: "200Mi"
             limits:
-              memory: "300Mi"
-              cpu: "1000m"
+              cpu: "500m"
+              memory: "400Mi"
           env:
             - name: LEAFWIKI_ADMIN_PASSWORD
               valueFrom:
@@ -84,9 +87,12 @@ spec:
               mountPath: /etc/ssl/private
               readOnly: true
           resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
             limits:
+              cpu: "500m"
               memory: "200Mi"
-              cpu: "1000m"
           command: ["/bin/sh", "-c"]
           args:
             - |

@@ -43,9 +43,12 @@ spec:
               mountPath: /etc/ssl/private
               readOnly: true
           resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
             limits:
+              cpu: "500m"
               memory: "200Mi"
-              cpu: "1000m"
           command: ["/bin/sh", "-c"]
           args:
             - |

@@ -48,6 +48,13 @@ spec:
                 secretKeyRef:
                   name: infomaniak-api-token
                   key: token
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
+            limits:
+              cpu: "500m"
+              memory: "200Mi"
           command: ["/bin/sh", "-c"]
           args:
             - |

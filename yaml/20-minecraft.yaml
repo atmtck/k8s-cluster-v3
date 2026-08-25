@@ -54,9 +54,12 @@ spec:
               mountPath: /data
           workingDir: /data
           resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
             limits:
-              memory: "3Gi"
               cpu: "2000m"
+              memory: "3Gi"
           stdin: true
           tty: true
           command: ["/bin/sh", "-c"]

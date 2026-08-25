@@ -61,9 +61,12 @@ spec:
               mountPath: /data
           workingDir: /data
           resources:
+            requests:
+              cpu: "50m"
+              memory: "200Mi"
             limits:
-              memory: "500Mi"
-              cpu: "1000m"
+              cpu: "500m"
+              memory: "400Mi"
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -98,9 +101,12 @@ spec:
               mountPath: /etc/ssl/private
               readOnly: true
           resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
             limits:
+              cpu: "500m"
               memory: "200Mi"
-              cpu: "1000m"
           command: ["/bin/sh", "-c"]
           args:
             - |
