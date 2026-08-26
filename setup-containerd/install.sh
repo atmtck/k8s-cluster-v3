@@ -13,7 +13,7 @@ Signed-By: /etc/apt/keyrings/docket-apt-keyring.gpg
 EOF
 
 apt update
-apt install -y --no-install-recommends --no-install-suggests containernetworking-plugins containerd.io
+apt install -y --no-install-recommends --no-install-suggests containernetworking-plugins containerd.io cri-tools
 systemctl enable containerd
 
 # abilitazione plugin cri
