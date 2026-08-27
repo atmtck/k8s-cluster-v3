@@ -1,3 +1,32 @@
+### per copiare i dati del mondo in caso ci sia un savefile esistente, applicare questo yaml, poi:
+### scalare il deployment esistente a 0:
+# kubectl scale deployment minecraft-deployment --replicas=0
+### creare un pod temporaneo per il trasferimento dati:
+# kubectl apply -f - <<EOF
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: data-loader
+# spec:
+#   volumes:
+#     - name: data-loader-volume
+#       persistentVolumeClaim:
+#         claimName: minecraft-data-pvc
+#   containers:
+#     - name: data-loader
+#       image: alpine:latest
+#       command: ["sleep", "infinity"]
+#       volumeMounts:
+#         - name: data-loader-volume
+#           mountPath: /data
+# EOF
+### copiare i dati nel pod temporaneo:
+# kubectl cp defcon data-loader:/data/defcon
+### entrare a bordo del container temporaneo se necessario per aggiustare i dati:
+# kubectl exec -it data-loader -- /bin/sh
+### cancellare il pod temporaneo e riportare il deployment a una replica:
+# kubectl delete pod/data-loader
+# kubectl scale deployment minecraft-deployment --replicas=1
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -72,14 +101,10 @@ spec:
 
               cat <<'EOF' > whitelist.json
               [
-                {"uuid": "8b3798c1-a6ca-3efe-add7-948f821f5c96", "name": "brg"},
                 {"uuid": "ccae4ace-fe97-482a-aac5-0b3a43cd1a17", "name": "springymochi"},
-                {"uuid": "4588e5ed-563d-3a76-a94b-61a600b8b116", "name": "tap3o"},
-                {"uuid": "b1b8d219-4958-3dab-9770-0267ecdcf72d", "name": "marcochiodo"},
-                {"uuid": "41cef4ff-d4fe-3ac6-a8e9-4df3695aaade", "name": "bu$a"},
-                {"uuid": "e42e552b-b129-3d9f-96b9-148709e61443", "name": "ClaraMilani"},
-                {"uuid": "40fe2335-d5c4-387a-a022-5e6327b213c3", "name": "_IC3"},
-                {"uuid": "7d49c588-9003-3d23-96bf-52d82636e1d6", "name": "Frozeskin"}
+                {"uuid": "80b09e72-cd80-4c2a-b923-6373710d269f", "name": "tap3o"},
+                {"uuid": "a8a22344-3849-4467-bc8f-da9667e87214", "name": "marcochiodo"},
+                {"uuid": "aff6536a-16e7-4297-979c-e590aafc6118", "name": "_IC3"}
               ]
               EOF
 
