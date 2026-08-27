@@ -21,7 +21,7 @@ cat <<'EOF' > /etc/apt/sources.list.d/kubernetes.sources
 Types: deb
 URIs: https://pkgs.k8s.io/core:/stable:/v1.36/deb/
 Suites: /
-Components: 
+Components:
 Signed-By: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 EOF
 
@@ -58,3 +58,8 @@ sed -i "s/###cert_key###/$KUBEADM_CERT_KEY/g"                                  /
 
 # export variabile kubeconfig per kubectl
 printf 'KUBECONFIG=/etc/kubernetes/admin.conf\n' >> /etc/environment
+
+# autocompletion kubectl
+apt-get install -y --no-install-recommends --no-install-suggests bash-completion
+kubectl completion bash | tee /etc/bash_completion.d/kubectl
+chmod 644 /etc/bash_completion.d/kubectl
