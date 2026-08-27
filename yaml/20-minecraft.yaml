@@ -9,7 +9,7 @@ spec:
   storageClassName: longhorn-default
   resources:
     requests:
-      storage: 15Gi
+      storage: 20Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,7 +27,7 @@ spec:
       labels:
         app: minecraft
       annotations:
-        dns.custom/name: "minecraft-test"
+        dns.custom/name: "minecraft"
         dns.custom/zone: "atmtc.eu"
     spec:
       hostNetwork: true
@@ -55,11 +55,11 @@ spec:
           workingDir: /data
           resources:
             requests:
-              cpu: "1000m"
+              cpu: "2000m"
               memory: "2Gi"
             limits:
               cpu: "2000m"
-              memory: "3Gi"
+              memory: "4Gi"
           stdin: true
           tty: true
           command: ["/bin/sh", "-c"]
@@ -69,10 +69,63 @@ spec:
               microdnf clean all
 
               echo 'eula=true' > eula.txt
-              echo '[{"uuid":"aff6536a-16e7-4297-979c-e590aafc6118","name":"_IC3"}]' > whitelist.json
-              echo 'whitelist=true' > server.properties
+
+              cat <<'EOF' > whitelist.json
+              [
+                {"uuid": "8b3798c1-a6ca-3efe-add7-948f821f5c96", "name": "brg"},
+                {"uuid": "ccae4ace-fe97-482a-aac5-0b3a43cd1a17", "name": "springymochi"},
+                {"uuid": "4588e5ed-563d-3a76-a94b-61a600b8b116", "name": "tap3o"},
+                {"uuid": "b1b8d219-4958-3dab-9770-0267ecdcf72d", "name": "marcochiodo"},
+                {"uuid": "41cef4ff-d4fe-3ac6-a8e9-4df3695aaade", "name": "bu$a"},
+                {"uuid": "e42e552b-b129-3d9f-96b9-148709e61443", "name": "ClaraMilani"},
+                {"uuid": "40fe2335-d5c4-387a-a022-5e6327b213c3", "name": "_IC3"},
+                {"uuid": "7d49c588-9003-3d23-96bf-52d82636e1d6", "name": "Frozeskin"}
+              ]
+              EOF
+
+              cat <<'EOF' > ops.json
+              [{
+                "uuid": "40fe2335-d5c4-387a-a022-5e6327b213c3",
+                "name": "_IC3",
+                "level": 4,
+                "bypassesPlayerLimit": true
+              }]
+              EOF
+
+              cat <<'EOF' > server.properties
+              motd=§c§lDEFCON SERVER §e§lV4 INAFFONDABILE§r | §b§oReplicato su K8s
+
+              white-list=true
+              enforce-whitelist=true
+
+              enable-code-of-conduct=false
+              enable-jmx-monitoring=false
+              enable-query=false
+              enable-rcon=false
+              enable-status=true
+              management-server-enabled=false
+
+              allow-flight=true
+              difficulty=hard
+              gamemode=survival
+              force-gamemode=true
+
+              level-name=defcon
+              level-seed=
+              level-type=minecraft\:normal
+              view-distance=16
+              simulation-distance=12
+              spawn-protection=1
+
+              max-players=8
+              online-mode=true
+              hide-online-players=true
+              pause-when-empty-seconds=60
+              region-file-compression=lz4
+              server-port=25565
+              EOF
 
               META_URL=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r '.latest.release as $r | .versions[] | select(.id == $r) | .url')
               curl -o server.jar $(curl -s "$META_URL" | jq -r '.downloads.server.url')
 
-              exec java -Xms2G -Xmx2G -jar server.jar nogui
+              exec java -Xms2G -Xmx2G -XX:+UseTransparentHugePages -jar server.jar nogui
