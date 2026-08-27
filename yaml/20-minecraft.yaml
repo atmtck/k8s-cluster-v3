@@ -76,12 +76,6 @@ spec:
           operator: "Exists"
           effect: "NoExecute"
           tolerationSeconds: 60
-      env:
-        - name: SERVER_PIN
-          valueFrom:
-            secretKeyRef:
-              name: minecraft-secret
-              key: login-pin
       containers:
         - name: minecraft
           image: registry.fedoraproject.org/fedora-minimal:latest
@@ -100,6 +94,12 @@ spec:
               memory: "4Gi"
           stdin: true
           tty: true
+          env:
+            - name: SERVER_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: minecraft-secret
+                  key: login-pin
           command: ["/bin/sh", "-c"]
           args:
             - |
