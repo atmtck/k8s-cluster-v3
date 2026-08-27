@@ -1,3 +1,6 @@
+# richiede di aver pre-registrato la password admin e un token jwt sul cluster con il comando:
+# kubectl create secret generic minecraft-secret --from-literal=login-pin="<PIN NUMERICO>"
+#
 ### per copiare i dati del mondo in caso ci sia un savefile esistente, applicare questo yaml, poi:
 ### scalare il deployment esistente a 0:
 # kubectl scale deployment minecraft-deployment --replicas=0
@@ -68,16 +71,22 @@ spec:
         - key: "node.kubernetes.io/unreachable"
           operator: "Exists"
           effect: "NoExecute"
-          tolerationSeconds: 30
+          tolerationSeconds: 60
         - key: "node.kubernetes.io/not-ready"
           operator: "Exists"
           effect: "NoExecute"
-          tolerationSeconds: 30
+          tolerationSeconds: 60
+      env:
+        - name: SERVER_PIN
+          valueFrom:
+            secretKeyRef:
+              name: minecraft-secret
+              key: login-pin
       containers:
         - name: minecraft
           image: registry.fedoraproject.org/fedora-minimal:latest
           ports:
-            - containerPort: 25565
+            - containerPort: 15857
           volumeMounts:
             - name: minecraft-data-volume
               mountPath: /data
@@ -97,24 +106,21 @@ spec:
               microdnf install -y --nodocs curl jq java-25-openjdk-headless
               microdnf clean all
 
+              ### setup regole server e whitelist
+
               echo 'eula=true' > eula.txt
 
               cat <<'EOF' > whitelist.json
               [
+                {"uuid": "8b3798c1-a6ca-3efe-add7-948f821f5c96", "name": "brg"},
                 {"uuid": "ccae4ace-fe97-482a-aac5-0b3a43cd1a17", "name": "springymochi"},
-                {"uuid": "80b09e72-cd80-4c2a-b923-6373710d269f", "name": "tap3o"},
-                {"uuid": "a8a22344-3849-4467-bc8f-da9667e87214", "name": "marcochiodo"},
-                {"uuid": "aff6536a-16e7-4297-979c-e590aafc6118", "name": "_IC3"}
+                {"uuid": "4588e5ed-563d-3a76-a94b-61a600b8b116", "name": "tap3o"},
+                {"uuid": "b1b8d219-4958-3dab-9770-0267ecdcf72d", "name": "marcochiodo"},
+                {"uuid": "41cef4ff-d4fe-3ac6-a8e9-4df3695aaade", "name": "bu$a"},
+                {"uuid": "e42e552b-b129-3d9f-96b9-148709e61443", "name": "ClaraMilani"},
+                {"uuid": "40fe2335-d5c4-387a-a022-5e6327b213c3", "name": "_IC3"},
+                {"uuid": "7d49c588-9003-3d23-96bf-52d82636e1d6", "name": "Frozeskin"}
               ]
-              EOF
-
-              cat <<'EOF' > ops.json
-              [{
-                "uuid": "40fe2335-d5c4-387a-a022-5e6327b213c3",
-                "name": "_IC3",
-                "level": 4,
-                "bypassesPlayerLimit": true
-              }]
               EOF
 
               cat <<'EOF' > server.properties
@@ -143,12 +149,54 @@ spec:
               spawn-protection=1
 
               max-players=8
-              online-mode=true
+              online-mode=false
               hide-online-players=true
               pause-when-empty-seconds=60
               region-file-compression=lz4
-              server-port=25565
+              server-port=15857
               EOF
+
+              ### micro datapack per autenticazione via pin
+
+              DP="/data/defcon/datapacks/auth"
+              mkdir -p "$DP/data/a/function" "$DP/data/a/functions"
+              mkdir -p "$DP/data/minecraft/tags/function" "$DP/data/minecraft/tags/functions"
+
+              echo '{"pack":{"pack_format":48,"supported_formats":[10,99],"description":""}}' > "$DP/pack.mcmeta"
+              echo '{"values":["a:tick"]}' > "$DP/data/minecraft/tags/function/tick.json"
+              cp "$DP/data/minecraft/tags/function/tick.json" "$DP/data/minecraft/tags/functions/tick.json"
+
+              cat <<EOF > "$DP/data/a/function/tick.mcfunction"
+              scoreboard objectives add pin trigger
+              scoreboard objectives add l custom:leave_game
+              scoreboard objectives add tries dummy
+              scoreboard objectives add timer dummy
+
+              execute as @a[scores={l=1..}] run tag @s remove ok
+              execute as @a[scores={l=1..}] run scoreboard players reset @s tries
+              execute as @a[scores={l=1..}] run scoreboard players reset @s timer
+              scoreboard players reset @a[scores={l=1..}] l
+
+              execute as @a[tag=!ok] run scoreboard players enable @s pin
+              effect give @a[tag=!ok] blindness 2 0 true
+              effect give @a[tag=!ok] slowness 2 255 true
+              effect give @a[tag=!ok] mining_fatigue 2 255 true
+              title @a[tag=!ok] actionbar {"text":"Enter PIN: /trigger pin set <PIN>","color":"yellow"}
+
+              execute as @a[tag=!ok,scores={pin=${SERVER_PIN}}] run effect clear @s
+              execute as @a[tag=!ok,scores={pin=${SERVER_PIN}}] run scoreboard players reset @s tries
+              execute as @a[tag=!ok,scores={pin=${SERVER_PIN}}] run scoreboard players reset @s timer
+              execute as @a[tag=!ok,scores={pin=${SERVER_PIN}}] run tag @s add ok
+
+              execute as @a[tag=!ok,scores={pin=1..}] unless score @s pin matches ${SERVER_PIN} run scoreboard players add @s tries 1
+              execute as @a[tag=!ok,scores={pin=1..}] unless score @s pin matches ${SERVER_PIN} run tellraw @s {"text":"Incorrect PIN!","color":"red"}
+              execute as @a[scores={pin=1..}] run scoreboard players reset @s pin
+
+              execute as @a[tag=!ok,scores={tries=3..}] run kick @s "Too many incorrect PIN attempts!"
+              EOF
+              cp "$DP/data/a/function/tick.mcfunction" "$DP/data/a/functions/tick.mcfunction"
+
+              ### download e lancio server.jar
 
               META_URL=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r '.latest.release as $r | .versions[] | select(.id == $r) | .url')
               curl -o server.jar $(curl -s "$META_URL" | jq -r '.downloads.server.url')
