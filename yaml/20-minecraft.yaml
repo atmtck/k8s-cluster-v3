@@ -135,6 +135,7 @@ spec:
               enable-rcon=false
               enable-status=true
               management-server-enabled=false
+              function-permission-level=4
 
               allow-flight=true
               difficulty=hard
@@ -162,7 +163,8 @@ spec:
               mkdir -p "$DP/data/a/function" "$DP/data/a/functions"
               mkdir -p "$DP/data/minecraft/tags/function" "$DP/data/minecraft/tags/functions"
 
-              echo '{"pack":{"pack_format":48,"supported_formats":[10,99],"description":""}}' > "$DP/pack.mcmeta"
+              echo '{"pack":{"pack_format":81,"description":"Auth System"}}' > "$DP/pack.mcmeta"
+
               echo '{"values":["a:tick"]}' > "$DP/data/minecraft/tags/function/tick.json"
               cp "$DP/data/minecraft/tags/function/tick.json" "$DP/data/minecraft/tags/functions/tick.json"
 
