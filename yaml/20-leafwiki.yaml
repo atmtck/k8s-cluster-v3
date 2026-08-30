@@ -87,7 +87,7 @@ spec:
         - name: caddy
           image: alpine:latest
           ports:
-            - containerPort: 9500
+            - containerPort: 9000
           volumeMounts:
             - name: leafwiki-certs-volume
               mountPath: /etc/ssl/private
@@ -115,7 +115,7 @@ spec:
                 }
               }
 
-              leafwiki.atmtc.eu:9500 {
+              leafwiki.atmtc.eu:9000 {
                 tls /etc/ssl/private/atmtc.eu.pem /etc/ssl/private/atmtc.eu.key
 
                 reverse_proxy 127.0.0.1:8500
