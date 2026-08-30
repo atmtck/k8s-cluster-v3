@@ -1,0 +1,99 @@
+# Richiede di aver pre-registrato la password admin sul cluster con il comando:
+# kubectl create secret generic opencloud-secret --from-literal=admin-password="<PASSWORD>"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opencloud-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-default
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencloud-deployment
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: opencloud
+  template:
+    metadata:
+      labels:
+        app: opencloud
+      annotations:
+        dns.custom/name: "opencloud"
+        dns.custom/zone: "atmtc.eu"
+    spec:
+      hostNetwork: true
+      securityContext:
+        runAsUser: 0
+      volumes:
+        - name: opencloud-data-volume
+          persistentVolumeClaim:
+            claimName: opencloud-data-pvc
+        - name: opencloud-certs-volume
+          hostPath:
+            path: /etc/ssl/private
+            type: Directory
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 120
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 120
+      containers:
+        - name: opencloud
+          image: docker.io/opencloudeu/opencloud:latest
+          ports:
+            - containerPort: 7000
+          volumeMounts:
+            - name: opencloud-data-volume
+              mountPath: /var/lib/opencloud
+              subPath: data
+            - name: opencloud-data-volume
+              mountPath: /etc/opencloud
+              subPath: config
+            - name: opencloud-certs-volume
+              mountPath: /etc/ssl/private
+              readOnly: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          env:
+            - name: OC_URL
+              value: "https://opencloud.atmtc.eu:7000"
+            - name: PROXY_HTTP_ADDR
+              value: "0.0.0.0:7000"
+            - name: PROXY_TLS
+              value: "true"
+            - name: PROXY_TRANSPORT_TLS_CERT
+              value: "/etc/ssl/private/atmtc.eu.pem"
+            - name: PROXY_TRANSPORT_TLS_KEY
+              value: "/etc/ssl/private/atmtc.eu.key"
+            - name: OC_INSECURE
+              value: "false"
+            - name: IDM_CREATE_DEMO_USERS
+              value: "false"
+            - name: IDM_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: opencloud-secret
+                  key: admin-password
+          command: ["/bin/sh", "-c"]
+          args:
+            - "opencloud init || true; exec opencloud server"
