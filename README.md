@@ -34,7 +34,7 @@
 
 #### Finalizzazione
 - al primo primo avvio, entrare nel bios, verificare stato secure boot, e riabilitarlo
-- accedere alla nuova installazione, registrare le chiavi LUKS sel TPM con `/usr/local/bin/tpm2-enroll-sb-keys`
+- accedere alla nuova installazione, registrare le chiavi LUKS nel TPM con `/usr/local/bin/tpm2-enroll-sb-keys`
 
 #### Bringup Cluster
 - verificare configurazione cni (*/etc/cni/net.d/10-bridge.conflist*) e kubeadm (/etc/kubernetes/kubeadm.yaml) abbiano valori corretti
