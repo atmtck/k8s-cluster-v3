@@ -75,7 +75,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              apk add --no-cache prosody
+              apk add --no-cache prosody || exit 1
 
               mkdir -p /data/prosody_store /data/http_upload
               mkdir -p /tmp/certs

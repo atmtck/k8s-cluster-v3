@@ -58,7 +58,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              apk add --no-cache curl jq kubectl
+              apk add --no-cache curl jq kubectl || exit 1
 
               while true; do
                 kubectl get pods -A --field-selector=status.phase=Running -o json | jq -r '

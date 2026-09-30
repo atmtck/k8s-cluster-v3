@@ -102,7 +102,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              apk add --no-cache caddy
+              apk add --no-cache caddy || exit 1
 
               cat <<'EOF' > Caddyfile
               {

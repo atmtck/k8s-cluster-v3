@@ -103,7 +103,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              microdnf install -y --nodocs curl jq java-25-openjdk-headless
+              microdnf install -y --nodocs curl jq java-25-openjdk-headless || exit 1
               microdnf clean all
 
               ### setup regole server e whitelist

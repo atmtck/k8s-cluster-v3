@@ -52,7 +52,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              apk add --no-cache git caddy
+              apk add --no-cache git caddy || exit 1
 
               cat <<'EOF' > Caddyfile
               www.atmtc.eu {
