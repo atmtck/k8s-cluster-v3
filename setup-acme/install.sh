@@ -27,8 +27,9 @@ acme.sh --config-home /etc/acme.sh \
         --key-file "/etc/ssl/private/${ACME_DOMAIN}.key" \
         --fullchain-file "/etc/ssl/private/${ACME_DOMAIN}.pem"
 
-mkdir -p /etc/auth
-printf '%s' "$INFOMANIAK_API_TOKEN" > /etc/auth/infomaniak_api_token
+mkdir -p /usr/local/etc
+printf '%s' "$INFOMANIAK_API_TOKEN" > /usr/local/etc/infomaniak_api_token
+chmod 400 /usr/local/etc/infomaniak_api_token
 
 cp "$SCRIPT_DIR"/acme-sh.service "$SCRIPT_DIR"/acme-sh.timer /etc/systemd/system/
 chmod 644 /etc/systemd/system/acme-sh.service /etc/systemd/system/acme-sh.timer
