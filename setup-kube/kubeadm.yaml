@@ -42,6 +42,19 @@ networking:
   podSubnet: "10.244.0.0/16"
 caCertificateValidityPeriod: 876600h0m0s
 certificateValidityPeriod: 876600h0m0s
+apiServer:
+  extraArgs:
+    - name: etcd-servers
+      value: "###etcd_addresses###"
+etcd:
+  local:
+    extraArgs:
+      - name: snapshot-count
+        value: "100000"
+      - name: heartbeat-interval
+        value: "1000"
+      - name: election-timeout
+        value: "10000"
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration

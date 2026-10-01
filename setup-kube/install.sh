@@ -44,10 +44,12 @@ chmod 644 /etc/haproxy/haproxy.cfg
 systemctl enable haproxy.service
 
 # installazione config kubeadm
+etcd_addresses="$( printf 'https://%s:2379\n' $( grep -hoP '(?<=WG_ADDRESS=").*(?=/[0-9]+")' /usr/local/etc/env/*.public ) | paste -s -d ',' - )"
+
 . "/usr/local/etc/env/$HOSTNAME.env.private"
 . "/usr/local/etc/env/$HOSTNAME.env.public"
-mkdir -p /etc/kubernetes
 
+mkdir -p /etc/kubernetes
 cp "$SCRIPT_DIR"/kubeadm.yaml /etc/kubernetes/
 chmod 600 /etc/kubernetes/kubeadm.yaml
 
@@ -55,6 +57,7 @@ sed -i "s/###hostname###/$HOSTNAME/g"                                          /
 sed -i "s/###wg_address###/$( printf '%s' "$WG_ADDRESS" | cut -d '/' -f 1 )/g" /etc/kubernetes/kubeadm.yaml
 sed -i "s/###token###/$KUBEADM_TOKEN/g"                                        /etc/kubernetes/kubeadm.yaml
 sed -i "s/###cert_key###/$KUBEADM_CERT_KEY/g"                                  /etc/kubernetes/kubeadm.yaml
+sed -i "s/###etcd_addresses###/$etcd_addresses/g"                              /etc/kubernetes/kubeadm.yaml
 
 # export variabile kubeconfig per kubectl
 printf 'KUBECONFIG=/etc/kubernetes/admin.conf\n' >> /etc/environment
