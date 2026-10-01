@@ -137,6 +137,12 @@ spec:
 
               Component "upload.prosody.atmtc.eu" "http_file_upload"
                 http_file_upload_file_size_limit = 52428800
+
+              Component "conference.prosody.atmtc.eu" "muc"
+                restrict_room_creation = "local"
+                modules_enabled = {
+                  "muc_mam";
+                }
               EOF
 
               chown -R prosody:prosody /etc/prosody
