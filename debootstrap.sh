@@ -110,12 +110,8 @@ target_luks_uuid=$( blkid | grep "$target_luks"| grep -oP '(?<= UUID=")[A-Za-z0-
 target_root_uuid=$( blkid | grep /dev/mapper/luks_root | grep -oP '(?<= UUID=")[A-Za-z0-9-]+' )
 
 cat << EOF > "$chroot_folder/etc/fstab"
-UUID=$target_root_uuid  /          ext4  defaults,noatime,discard 0 1
-UUID=$target_esp_uuid   /boot/efi  vfat  defaults,noatime,discard 0 2
-EOF
-
-cat << EOF > "$chroot_folder/etc/crypttab"
-luks_root  UUID=$target_root_uuid  none  luks
+UUID=$target_root_uuid  /          ext4  defaults,noatime 0 1
+UUID=$target_esp_uuid   /boot/efi  vfat  defaults,noatime 0 2
 EOF
 
 

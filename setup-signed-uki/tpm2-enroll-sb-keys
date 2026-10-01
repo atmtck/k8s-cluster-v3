@@ -7,4 +7,4 @@ fi
 
 ROOT="$( blkid | grep 'PARTLABEL="ROOT"' | grep -oE '^[^ :]+' )"
 TPM='/dev/tpmrm0'
-systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=$TPM --tpm2-pcrs=7+15:sha256=0000000000000000000000000000000000000000000000000000000000000000 $ROOT
+systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=$TPM --tpm2-pcrs=0+2+7+15:sha256=0000000000000000000000000000000000000000000000000000000000000000 $ROOT
