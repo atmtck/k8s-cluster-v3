@@ -1,0 +1,72 @@
+# la configurazione dell'account admin e abilitazione https va fatta dopo il primo avvio
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: homeassistant-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-default
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homeassistant-deployment
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: homeassistant
+  template:
+    metadata:
+      labels:
+        app: homeassistant
+      annotations:
+        dns.custom/name: "homeassistant"
+        dns.custom/zone: "atmtc.eu"
+    spec:
+      hostNetwork: true
+      volumes:
+        - name: homeassistant-data-volume
+          persistentVolumeClaim:
+            claimName: homeassistant-data-pvc
+        - name: homeassistant-certs-volume
+          hostPath:
+            path: /etc/ssl/private
+            type: Directory
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 60
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 60
+      containers:
+        - name: homeassistant
+          image: ghcr.io/home-assistant/home-assistant:stable
+          ports:
+            - containerPort: 8123
+          volumeMounts:
+            - name: homeassistant-data-volume
+              mountPath: /config
+            - name: homeassistant-certs-volume
+              mountPath: /etc/ssl/private
+              readOnly: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1500Mi"
+          env:
+            - name: TZ
+              value: "Europe/Rome"
