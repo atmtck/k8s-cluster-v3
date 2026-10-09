@@ -71,56 +71,42 @@ spec:
               memory: "128Mi"
             limits:
               cpu: "500m"
-              memory: "384Mi"
+              memory: "1Gi"
           command: ["/bin/sh", "-c"]
           args:
             - |
-              apk add --no-cache prosody || exit 1
+              apk add --no-cache prosody su-exec || exit 1
 
               mkdir -p /data/prosody_store
-              mkdir -p /tmp/certs
+              mkdir -p /etc/prosody/certs
 
-              cp /etc/ssl/private/atmtc.eu.pem /tmp/certs/atmtc.eu.pem
-              cp /etc/ssl/private/atmtc.eu.key /tmp/certs/atmtc.eu.key
-              chown -R prosody:prosody /data /tmp/certs
-              chmod 400 /tmp/certs/atmtc.eu.key
+              cp /etc/ssl/private/atmtc.eu.pem /etc/prosody/certs/atmtc.eu.pem
+              cp /etc/ssl/private/atmtc.eu.key /etc/prosody/certs/atmtc.eu.key
+              chmod 400 /etc/prosody/certs/atmtc.eu.key
 
               cat <<'EOF' > /etc/prosody/prosody.cfg.lua
-              admins = { "admin@prosody.atmtc.eu" }
-
               data_path = "/data/prosody_store"
               daemonize = false
               log = { "*console" }
 
               ssl = {
-                key = "/tmp/certs/atmtc.eu.key";
-                certificate = "/tmp/certs/atmtc.eu.pem";
-              }
-              https_ssl = {
-                key = "/tmp/certs/atmtc.eu.key";
-                certificate = "/tmp/certs/atmtc.eu.pem";
+                key = "/etc/prosody/certs/atmtc.eu.key";
+                certificate = "/etc/prosody/certs/atmtc.eu.pem";
               }
 
               modules_enabled = {
-                "roster";       -- Gestione della rubrica contatti e delle richieste di autorizzazione presenza
-                "saslauth";     -- Negoziazione autenticazione sicura utenti (SCRAM-SHA-1/256, PLAIN)
-                "tls";          -- Crittografia del canale di trasporto (STARTTLS su porta 5222)
-                "disco";        -- Service Discovery (XEP-0030): scoperta delle feature attive sul server
-                "posix";        -- Gestione segnali di sistema (reload configurazione e gestione processo)
-                "private";      -- Private XML Storage (XEP-0049): memorizzazione cloud impostazioni client
-                "vcard4";       -- Schede profilo vCard4/XML (XEP-0292): gestione avatar e dettagli utente
-                "vcard_legacy"; -- Schede profilo vCard-temp (XEP-0054): fallback avatar per client legacy
-                "version";      -- Risponde alle richieste di versione software (XEP-0092)
-                "uptime";       -- Fornisce il tempo di attività del server (XEP-0012)
-                "time";         -- Sincronizzazione dell'orario con il server (XEP-0202)
-                "ping";         -- Verifica periodica dello stato di attività della connessione (XEP-0199)
-                "pep";          -- Personal Eventing Protocol (XEP-0163): necessario per OMEMO (bundle chiavi)
-                "admin_adhoc";  -- Comandi amministrativi via chat (XEP-0050) per utenti admin
-                "carbons";      -- Message Carbons (XEP-0280): sincronizzazione cronologia su più dispositivi
-                "mam";          -- Message Archive Management (XEP-0313): storico messaggi salvato sul server
-                "smacks";       -- Stream Management (XEP-0198): previene disconnessioni al cambio rete (Wi-Fi/4G)
-                "blocking";     -- Blocking Command (XEP-0191): blocco utenti indesiderati
-                "csi_simple";   -- Client State Indication (XEP-0352): ottimizza batteria e traffico in background
+                "saslauth";     -- RFC 4422: Autenticazione SASL login utente
+                "tls";          -- RFC 6120: STARTTLS per connessioni client
+                "roster";       -- RFC 6121: Gestione rubrica e sottoscrizioni
+                "disco";        -- XEP-0030 Service Discovery
+                "private";      -- XEP-0049 Private XML Storage
+                "pep";          -- XEP-0163 Personal Eventing Protocol (storage privato per-user moderno, richiesto per OMEMO)
+                "smacks";       -- XEP-0198 Stream Management
+                "ping";         -- XEP-0199 XMPP Ping
+                "carbons";      -- XEP-0280 Message Carbons (copia dei messaggi tra device dello stesso utente, necessario per multi-device)
+                "mam";          -- XEP-0313 Message Archive Management (salvataggio message history lato server)
+                "csi_simple";   -- XEP-0352 Client State Indication (client segnala stato background, invio traffico non urgente ritardato)
+                "bookmarks";    -- XEP-0402 PEP Native Bookmarks
               }
 
               modules_disabled = { "s2s" }
@@ -131,21 +117,24 @@ spec:
               https_ports = { 5281 }
               http_ports = {}
 
+              allow_registration = false
+
+              archive_expires_after = "90d"
+
               VirtualHost "prosody.atmtc.eu"
-                allow_registration = false
 
               Component "upload.prosody.atmtc.eu" "http_file_share"
                 http_host = "prosody.atmtc.eu"
-                http_file_share_size_limit = 50 * 1024 * 1024     -- 50 MB
-                http_file_share_expires_after = 60 * 60 * 24 * 30 -- 30 days
+                http_file_share_size_limit = 1024*1024*1024      -- 1GiB
+                http_file_share_daily_quota = 1024*1024*1024      -- 1GiB
+                http_file_share_global_quota = 15*1024*1024*1024 -- 15 GiB
+                http_file_share_expires_after = "30 days"
 
               Component "conference.prosody.atmtc.eu" "muc"
                 restrict_room_creation = "local"
-                modules_enabled = {
-                  "muc_mam";
-                }
+                modules_enabled = { "muc_mam" }
+                muc_log_expires_after = "90d"
               EOF
 
-              chown -R prosody:prosody /etc/prosody
-
-              exec su -s /bin/sh prosody -c "prosody"
+              chown -R prosody:prosody /data /etc/prosody
+              exec su-exec prosody prosody
